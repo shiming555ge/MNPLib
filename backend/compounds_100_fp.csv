@@ -1,0 +1,101 @@
+ID,Source,Item Name,Item Type,IUPAC name,Description,CAS number,Item Tag,Formula,Structure,MS1,MS2,Bioactivity,smiles,fp
+CMP0001,PubChem,Compound 001,Small molecule,3-butyl amide,Synthetic sample 1. Test compound.,88796-79-1,CNS-active,C2HN,2D,501.514,297.3334,Weak,CC(=O)NC,4P///wAIAAAKAAAA1QHGwQJxAEUBTrydAVqZBQkA
+CMP0002,Literature,Compound 002,Peptide,benzyl acid,Synthetic sample 2. Lead-like.,91606-64-5,antiinflammatory,C5H13O2,2D,122.5373,97.2022,Weak,CCC(=O)O,4P///wAIAAAKAAAABJpVAbwRAnEAtHkAnQjNAAkA
+CMP0003,In-house,Compound 003,Small molecule,ethyl chloride,Synthetic sample 3. Test compound.,72457-47-9,enzyme inhibitor,C19H12O5,2D,220.9237,88.9376,Active,CCC(=O)O,4P///wAIAAAKAAAABJpVAbwRAnEAtHkAnQjNAAkA
+CMP0004,ChEMBL,Compound 004,Small molecule,4-carboxyl ester,Synthetic sample 4. Lead-like.,48620-55-3,antiinflammatory,C3H38O5N,2D,233.6082,122.3131,Moderate,CCOCC,4P///wAIAAAIAAAAoFalAEEEEQGRANEAxQlu
+CMP0005,ZINC,Compound 005,Peptide,2-butyl acid,Synthetic sample 5. Fragment.,52681-44-1,analgesic,C19H20ON3,2D,735.9107,383.5539,Moderate,C=CC(=O)O,4P///wAIAAAKAAAAFQRBAWZW4F0AIBUEWQI9AgkA
+CMP0006,ChEMBL,Compound 006,Peptide,benzyl sulfate,Synthetic sample 6. Designed ligand.,76584-61-5,analgesic,C5H32O3,2D,695.8272,213.6112,Inactive,CCN,4P///wAIAAAGAAAAoFUBuQX9AJbisQs=
+CMP0007,Literature,Compound 007,Intermediate,N-acetyl sulfate,Synthetic sample 7. Designed ligand.,69452-42-8,antibacterial,C4H34O2N2,2D,376.0739,194.6583,Moderate,c1ccccc1,4P///wAIAAADAAAAFQTpCEEKuQA=
+CMP0008,ZINC,Compound 008,Peptide,2-benzyl sulfate,Synthetic sample 8. Screening hit.,26171-29-5,anticancer,C18H33N2,2D,133.9008,60.8026,Moderate,CCOC,4P///wAIAAAIAAAAoFUBQQTyLo0AZtEApQo=
+CMP0009,ChEMBL,Compound 009,Small molecule,ethyl acid,Synthetic sample 9. Designed ligand.,9171-78-2,anticancer,C16H35ON2,2D,504.9454,441.8545,Weak,CC(C)C(=O)O,4P///wAIAAAKAAAAAmUC0hECcQDlAY0CuQWQSLo=
+CMP0010,ChEMBL,Compound 010,Polymer,4-carboxyl sulfate,Synthetic sample 10. Designed ligand.,15960-41-3,antiviral,C11HO4N,2D,55.3931,38.5253,Active,CCOCC,4P///wAIAAAIAAAAoFalAEEEEQGRANEAxQlu
+CMP0011,ChEMBL,Compound 011,Small molecule,4-ethyl sulfate,Synthetic sample 11. Lead-like.,36600-95-7,analgesic,C18H8O5N3,2D,404.7297,196.2704,Active,CC(=O)O,4P///wAIAAAHAAAAFQTsNQBxAEUBTm0LCQA=
+CMP0012,PubChem,Compound 012,Natural product,N-acetyl chloride,Synthetic sample 12. Test compound.,88359-93-1,antibacterial,C13H21N,2D,452.2143,134.8176,Inactive,CC#N,4P///wAIAAAGAAAAiQjmwqEAGQPweQY=
+CMP0013,In-house,Compound 013,Natural product,2-carboxyl sulfate,Synthetic sample 13. Test compound.,6730-93-8,antibacterial,C3H15ON3,2D,210.3105,101.1022,Active,CC(C)C(=O)O,4P///wAIAAAKAAAAAmUC0hECcQDlAY0CuQWQSLo=
+CMP0014,ChEMBL,Compound 014,Natural product,N-benzyl chloride,Synthetic sample 14. Fragment.,55544-99-8,unknown,C5H12O2N,3D,484.3852,280.719,Moderate,CCO,4P///wAIAAAGAAAAoDUAjgEG5QGBA/UH
+CMP0015,PubChem,Compound 015,Small molecule,N-amino sulfate,Synthetic sample 15. Lead-like.,7555-75-1,anticancer,C3H38N,2D,756.1971,452.7902,Weak,COC(=O)C,4P///wAIAAAKAAAAKQhY3kK9ACIqvO0EAQMJAA==
+CMP0016,ZINC,Compound 016,Small molecule,2-acetyl sulfate,Synthetic sample 16. Screening hit.,68622-50-4,analgesic,C11H15O2N3,2D,534.1256,277.7759,Active,CNC(=O)C,4P///wAIAAAKAAAA1QHGwQJxAEUBTrydAVqZBQkA
+CMP0017,PubChem,Compound 017,Natural product,ethyl acid,Synthetic sample 17. Screening hit.,28038-74-4,anticancer,C12H4ON2,2D,378.6384,219.7059,Moderate,CNC(=O)C,4P///wAIAAAKAAAA1QHGwQJxAEUBTrydAVqZBQkA
+CMP0018,ZINC,Compound 018,Intermediate,benzyl acid,Synthetic sample 18. Lead-like.,34764-24-1,anticancer,C9H18O4N,2D,202.698,130.5307,Moderate,CCO,4P///wAIAAAGAAAAoDUAjgEG5QGBA/UH
+CMP0019,ZINC,Compound 019,Natural product,2-ethyl chloride,Synthetic sample 19. Fragment.,5878-10-5,anticancer,C9H10O5N3,2D,370.7652,76.6627,Active,CC(=O)NC,4P///wAIAAAKAAAA1QHGwQJxAEUBTrydAVqZBQkA
+CMP0020,ChEMBL,Compound 020,Intermediate,4-oxo sulfate,Synthetic sample 20. Lead-like.,56433-26-0,antiinflammatory,C12H2O2N,2D,550.2001,246.2558,Weak,CC(=O)O,4P///wAIAAAHAAAAFQTsNQBxAEUBTm0LCQA=
+CMP0021,Literature,Compound 021,Intermediate,3-propyl amide,Synthetic sample 21. Designed ligand.,3348-32-5,CNS-active,C8H17O,2D,79.0435,41.8522,Inactive,C1CCCCC1,4P///wAIAAADAAAABG0Myu0N
+CMP0022,Literature,Compound 022,Polymer,3-butyl acid,Synthetic sample 22. Lead-like.,52327-52-4,antiviral,C9H22O5N3,2D,682.7459,294.813,Active,CCS,4P///wAIAAAGAAAAoFEAgOkJRQS1AnkC
+CMP0023,PubChem,Compound 023,Polymer,benzyl acid,Synthetic sample 23. Test compound.,78293-65-5,enzyme inhibitor,C14H38O4,2D,482.441,182.5102,Potent,O=C(O)C(C)N,4P///wAIAAAMAAAAAgkAWQDSpsEAHQAo5QHigQiQCQA=
+CMP0024,PubChem,Compound 024,Intermediate,3-phenyl chloride,Synthetic sample 24. Test compound.,87162-52-9,enzyme inhibitor,C4H19O4N2,2D,294.6372,202.7239,Weak,CCN,4P///wAIAAAGAAAAoFUBuQX9AJbisQs=
+CMP0025,ChEMBL,Compound 025,Peptide,N-propyl sulfate,Synthetic sample 25. Screening hit.,39546-61-8,antibacterial,C10H18ON3,2D,504.9962,214.9135,Potent,C1=CC=CN=C1,4P///wAIAAAJAAAA6QMICl4pCIT9BBkCDLkA
+CMP0026,Literature,Compound 026,Peptide,N-propyl acid,Synthetic sample 26. Fragment.,67661-94-9,enzyme inhibitor,C3H15O5N2,2D,199.3474,43.2779,Inactive,CCOC,4P///wAIAAAIAAAAoFUBQQTyLo0AZtEApQo=
+CMP0027,Literature,Compound 027,Intermediate,N-acetyl sulfate,Synthetic sample 27. Lead-like.,94255-99-6,unknown,C13H15O,3D,695.3304,570.0497,Potent,c1ccccc1,4P///wAIAAADAAAAFQTpCEEKuQA=
+CMP0028,ChEMBL,Compound 028,Peptide,N-methyl sulfate,Synthetic sample 28. Lead-like.,16006-68-2,unknown,C17H35O4N2,3D,718.5694,451.8771,Weak,CCOC,4P///wAIAAAIAAAAoFUBQQTyLo0AZtEApQo=
+CMP0029,Literature,Compound 029,Intermediate,3-carboxyl chloride,Synthetic sample 29. Fragment.,98636-41-4,unknown,C8H17O3,2D,225.8702,98.2746,Weak,CCC(=O)O,4P///wAIAAAKAAAABJpVAbwRAnEAtHkAnQjNAAkA
+CMP0030,PubChem,Compound 030,Peptide,3-acetyl amide,Synthetic sample 30. Lead-like.,8518-63-6,enzyme inhibitor,C18H29O3,2D,365.1076,304.2759,Weak,C1CCCCC1,4P///wAIAAADAAAABG0Myu0N
+CMP0031,PubChem,Compound 031,Intermediate,N-methyl ester,Synthetic sample 31. Fragment.,98859-59-6,analgesic,C16H14O2N3,2D,341.6429,228.2897,Potent,CCOCC,4P///wAIAAAIAAAAoFalAEEEEQGRANEAxQlu
+CMP0032,ChEMBL,Compound 032,Natural product,amino acid,Synthetic sample 32. Designed ligand.,77680-82-0,antiviral,C14H8O3N,2D,334.3279,116.4003,Moderate,C1CCCCC1,4P///wAIAAADAAAABG0Myu0N
+CMP0033,In-house,Compound 033,Natural product,N-benzyl acid,Synthetic sample 33. Designed ligand.,2640-79-0,enzyme inhibitor,C8H4O5,2D,762.2088,258.8099,Active,CC(=O)NC,4P///wAIAAAKAAAA1QHGwQJxAEUBTrydAVqZBQkA
+CMP0034,ZINC,Compound 034,Peptide,3-carboxyl acid,Synthetic sample 34. Screening hit.,28669-69-4,enzyme inhibitor,C6H38O4,2D,172.8244,72.1935,Weak,CC(C)C(=O)O,4P///wAIAAAKAAAAAmUC0hECcQDlAY0CuQWQSLo=
+CMP0035,PubChem,Compound 035,Polymer,N-acetyl amide,Synthetic sample 35. Test compound.,77707-98-3,antiviral,C10H38,2D,371.2835,170.5675,Weak,COC(=O)C,4P///wAIAAAKAAAAKQhY3kK9ACIqvO0EAQMJAA==
+CMP0036,In-house,Compound 036,Small molecule,N-ethyl chloride,Synthetic sample 36. Fragment.,83407-68-2,CNS-active,C6H33O5N2,2D,739.7132,549.0514,Potent,C1=CC=CN=C1,4P///wAIAAAJAAAA6QMICl4pCIT9BBkCDLkA
+CMP0037,Literature,Compound 037,Intermediate,4-butyl acid,Synthetic sample 37. Fragment.,59187-41-7,CNS-active,C11HO3N2,2D,209.0899,158.5911,Moderate,CC(=O)NC,4P///wAIAAAKAAAA1QHGwQJxAEUBTrydAVqZBQkA
+CMP0038,In-house,Compound 038,Intermediate,methyl sulfate,Synthetic sample 38. Lead-like.,11321-40-6,unknown,C18H15O5N3,2D,418.116,315.6997,Active,CC(=O)NC,4P///wAIAAAKAAAA1QHGwQJxAEUBTrydAVqZBQkA
+CMP0039,In-house,Compound 039,Peptide,3-benzyl sulfate,Synthetic sample 39. Fragment.,62131-80-8,enzyme inhibitor,C14H35O2N2,2D,253.1873,95.194,Active,CCOCC,4P///wAIAAAIAAAAoFalAEEEEQGRANEAxQlu
+CMP0040,ChEMBL,Compound 040,Polymer,propyl amide,Synthetic sample 40. Lead-like.,96910-71-4,antiinflammatory,C4H12O2N,2D,276.7007,192.4766,Inactive,CCN(CC)CC,4P///wAIAAAIAAAAoKkAVCkHZPjdBY0EhA==
+CMP0041,In-house,Compound 041,Small molecule,benzyl amide,Synthetic sample 41. Designed ligand.,13546-11-9,antiinflammatory,C16H30O3N2,2D,88.5325,76.0268,Potent,CC(=O)O,4P///wAIAAAHAAAAFQTsNQBxAEUBTm0LCQA=
+CMP0042,PubChem,Compound 042,Small molecule,N-ethyl sulfate,Synthetic sample 42. Test compound.,19987-29-9,antiinflammatory,C3H15N3,2D,643.0556,230.2017,Weak,CCOCC,4P///wAIAAAIAAAAoFalAEEEEQGRANEAxQlu
+CMP0043,Literature,Compound 043,Natural product,4-oxo chloride,Synthetic sample 43. Fragment.,74631-89-0,antiviral,C7H40ON2,2D,167.7928,53.9738,Active,CCC(=O)O,4P///wAIAAAKAAAABJpVAbwRAnEAtHkAnQjNAAkA
+CMP0044,ChEMBL,Compound 044,Small molecule,N-oxo chloride,Synthetic sample 44. Fragment.,4378-39-4,antiinflammatory,C15H4O5N,3D,640.871,408.5813,Inactive,C1=CC=CN=C1,4P///wAIAAAJAAAA6QMICl4pCIT9BBkCDLkA
+CMP0045,Literature,Compound 045,Small molecule,3-propyl ester,Synthetic sample 45. Lead-like.,9459-17-2,antiinflammatory,C20H36O2N3,2D,566.5085,390.7853,Moderate,CCN,4P///wAIAAAGAAAAoFUBuQX9AJbisQs=
+CMP0046,ZINC,Compound 046,Intermediate,N-ethyl sulfate,Synthetic sample 46. Test compound.,56726-51-9,antiinflammatory,CH5O,3D,554.2112,215.3985,Active,C(C(=O)O)N,4P///wAIAAAKAAAANmjRAhECcQB5ABz1ANUGzQAJAA==
+CMP0047,ChEMBL,Compound 047,Natural product,N-benzyl amide,Synthetic sample 47. Screening hit.,57232-91-7,antiviral,C16H22O3N2,2D,128.4499,40.1505,Potent,CCOC,4P///wAIAAAIAAAAoFUBQQTyLo0AZtEApQo=
+CMP0048,Literature,Compound 048,Polymer,methyl chloride,Synthetic sample 48. Test compound.,41324-42-5,antiviral,C13H32N3,2D,190.6869,86.428,Potent,CCOCC,4P///wAIAAAIAAAAoFalAEEEEQGRANEAxQlu
+CMP0049,Literature,Compound 049,Small molecule,4-amino amide,Synthetic sample 49. Fragment.,57524-99-7,antiviral,CH40O4N,2D,283.0626,59.322,Potent,CCOC(=O)C,4P///wAIAAAOAAAAoIRJAI0DWN5MqQAiKtEAGFkFCQEJAA==
+CMP0050,PubChem,Compound 050,Peptide,N-ethyl amide,Synthetic sample 50. Designed ligand.,94026-47-8,antiinflammatory,C14H30O3N,2D,158.4815,52.8421,Weak,CCN(CC)CC,4P///wAIAAAIAAAAoKkAVCkHZPjdBY0EhA==
+CMP0051,ZINC,Compound 051,Peptide,4-acetyl ester,Synthetic sample 51. Screening hit.,35118-10-4,antiinflammatory,C19H37O5N3,3D,384.9105,207.4818,Moderate,c1ccccc1,4P///wAIAAADAAAAFQTpCEEKuQA=
+CMP0052,ZINC,Compound 052,Intermediate,N-phenyl amide,Synthetic sample 52. Lead-like.,75046-59-3,CNS-active,C2H20O5N3,2D,658.5567,309.6897,Inactive,CCOCC,4P///wAIAAAIAAAAoFalAEEEEQGRANEAxQlu
+CMP0053,Literature,Compound 053,Small molecule,oxo ester,Synthetic sample 53. Test compound.,57811-22-8,unknown,CH9O3N,2D,636.144,245.2437,Weak,C1CCCCC1,4P///wAIAAADAAAABG0Myu0N
+CMP0054,Literature,Compound 054,Small molecule,acetyl ester,Synthetic sample 54. Designed ligand.,71012-14-9,antiviral,C8H40O5N2,3D,610.0748,307.3435,Active,C=CC(=O)O,4P///wAIAAAKAAAAFQRBAWZW4F0AIBUEWQI9AgkA
+CMP0055,PubChem,Compound 055,Natural product,4-methyl acid,Synthetic sample 55. Fragment.,7455-47-5,enzyme inhibitor,C14H9ON3,2D,644.3896,205.5529,Active,O=C(O)C(C)N,4P///wAIAAAMAAAAAgkAWQDSpsEAHQAo5QHigQiQCQA=
+CMP0056,ZINC,Compound 056,Natural product,3-carboxyl sulfate,Synthetic sample 56. Lead-like.,30533-69-4,unknown,C9O3N2,2D,168.4817,85.7927,Moderate,CNC(=O)C,4P///wAIAAAKAAAA1QHGwQJxAEUBTrydAVqZBQkA
+CMP0057,ZINC,Compound 057,Polymer,4-carboxyl ester,Synthetic sample 57. Lead-like.,50522-71-1,analgesic,C13H36O2N2,3D,271.4231,240.0903,Potent,C1=CC=CN=C1,4P///wAIAAAJAAAA6QMICl4pCIT9BBkCDLkA
+CMP0058,In-house,Compound 058,Small molecule,2-oxo chloride,Synthetic sample 58. Fragment.,30262-87-5,analgesic,C7H39O2N,2D,727.5528,474.6834,Moderate,COC(=O)C,4P///wAIAAAKAAAAKQhY3kK9ACIqvO0EAQMJAA==
+CMP0059,Literature,Compound 059,Small molecule,4-propyl acid,Synthetic sample 59. Fragment.,42923-63-2,analgesic,C5H34O2N2,3D,242.7276,188.668,Potent,COC(=O)C,4P///wAIAAAKAAAAKQhY3kK9ACIqvO0EAQMJAA==
+CMP0060,In-house,Compound 060,Polymer,N-ethyl amide,Synthetic sample 60. Lead-like.,88747-96-6,enzyme inhibitor,C3H25N2,2D,391.0895,262.4132,Moderate,CCN(CC)CC,4P///wAIAAAIAAAAoKkAVCkHZPjdBY0EhA==
+CMP0061,ZINC,Compound 061,Natural product,2-butyl chloride,Synthetic sample 61. Test compound.,81305-81-5,analgesic,C3H40O3N2,2D,137.507,31.8663,Active,CC#N,4P///wAIAAAGAAAAiQjmwqEAGQPweQY=
+CMP0062,In-house,Compound 062,Natural product,2-butyl sulfate,Synthetic sample 62. Lead-like.,51040-68-5,CNS-active,C19H9O3,3D,511.7392,438.733,Moderate,CCN(CC)CC,4P///wAIAAAIAAAAoKkAVCkHZPjdBY0EhA==
+CMP0063,PubChem,Compound 063,Polymer,N-carboxyl amide,Synthetic sample 63. Fragment.,13122-97-5,enzyme inhibitor,C2H25O2N,3D,761.7581,591.8356,Active,CCOC(=O)C,4P///wAIAAAOAAAAoIRJAI0DWN5MqQAiKtEAGFkFCQEJAA==
+CMP0064,ChEMBL,Compound 064,Intermediate,2-phenyl amide,Synthetic sample 64. Lead-like.,74100-36-1,analgesic,C19H13ON2,2D,641.4828,395.9149,Moderate,CCO,4P///wAIAAAGAAAAoDUAjgEG5QGBA/UH
+CMP0065,ChEMBL,Compound 065,Peptide,4-propyl acid,Synthetic sample 65. Test compound.,17375-11-5,analgesic,C19H20N,2D,145.0689,71.7616,Active,CCN,4P///wAIAAAGAAAAoFUBuQX9AJbisQs=
+CMP0066,PubChem,Compound 066,Natural product,4-amino sulfate,Synthetic sample 66. Test compound.,59345-74-3,antibacterial,C17H19O3,2D,409.2364,196.8968,Active,CCC(=O)O,4P///wAIAAAKAAAABJpVAbwRAnEAtHkAnQjNAAkA
+CMP0067,Literature,Compound 067,Natural product,2-phenyl sulfate,Synthetic sample 67. Lead-like.,8709-26-4,enzyme inhibitor,C13H38O4N2,2D,504.0701,135.809,Active,c1ccccc1,4P///wAIAAADAAAAFQTpCEEKuQA=
+CMP0068,ZINC,Compound 068,Peptide,N-butyl chloride,Synthetic sample 68. Fragment.,59541-61-6,antiviral,C11H27O2N2,2D,164.4792,139.1641,Active,C1=CC=CN=C1,4P///wAIAAAJAAAA6QMICl4pCIT9BBkCDLkA
+CMP0069,PubChem,Compound 069,Small molecule,N-ethyl ester,Synthetic sample 69. Lead-like.,73024-17-9,enzyme inhibitor,C4H26O2N3,3D,590.7955,518.647,Weak,c1ccccc1,4P///wAIAAADAAAAFQTpCEEKuQA=
+CMP0070,In-house,Compound 070,Polymer,amino amide,Synthetic sample 70. Lead-like.,86179-71-3,antiviral,C12H35O2,2D,480.575,367.6663,Weak,CCN(CC)CC,4P///wAIAAAIAAAAoKkAVCkHZPjdBY0EhA==
+CMP0071,ZINC,Compound 071,Intermediate,2-oxo ester,Synthetic sample 71. Test compound.,23747-44-4,enzyme inhibitor,C12ON,2D,350.5883,104.9354,Active,CCN,4P///wAIAAAGAAAAoFUBuQX9AJbisQs=
+CMP0072,PubChem,Compound 072,Intermediate,N-acetyl chloride,Synthetic sample 72. Fragment.,20731-57-4,enzyme inhibitor,C19H38,2D,615.8269,144.6169,Active,CCOC(=O)C,4P///wAIAAAOAAAAoIRJAI0DWN5MqQAiKtEAGFkFCQEJAA==
+CMP0073,In-house,Compound 073,Natural product,N-oxo chloride,Synthetic sample 73. Designed ligand.,35904-37-8,antiviral,C12H27N2,2D,494.8507,281.4977,Moderate,C1=CC=CN=C1,4P///wAIAAAJAAAA6QMICl4pCIT9BBkCDLkA
+CMP0074,PubChem,Compound 074,Peptide,methyl acid,Synthetic sample 74. Lead-like.,39607-37-2,antiinflammatory,C10H20,2D,372.9913,108.3279,Weak,CCOCC,4P///wAIAAAIAAAAoFalAEEEEQGRANEAxQlu
+CMP0075,ChEMBL,Compound 075,Intermediate,4-ethyl chloride,Synthetic sample 75. Test compound.,57276-12-7,antiviral,C11H36O3N3,2D,363.2705,101.9415,Active,CCN,4P///wAIAAAGAAAAoFUBuQX9AJbisQs=
+CMP0076,In-house,Compound 076,Peptide,N-phenyl acid,Synthetic sample 76. Designed ligand.,13975-41-6,CNS-active,C17H5O3N2,2D,216.179,161.136,Active,CNC(=O)C,4P///wAIAAAKAAAA1QHGwQJxAEUBTrydAVqZBQkA
+CMP0077,ZINC,Compound 077,Small molecule,butyl ester,Synthetic sample 77. Fragment.,95439-92-2,analgesic,C4H9O2N,2D,164.6523,120.4278,Active,CCOC,4P///wAIAAAIAAAAoFUBQQTyLo0AZtEApQo=
+CMP0078,ChEMBL,Compound 078,Natural product,oxo chloride,Synthetic sample 78. Screening hit.,84378-91-9,enzyme inhibitor,C11H9O3,2D,523.5388,396.5444,Weak,CCC(=O)O,4P///wAIAAAKAAAABJpVAbwRAnEAtHkAnQjNAAkA
+CMP0079,PubChem,Compound 079,Polymer,2-benzyl chloride,Synthetic sample 79. Designed ligand.,5029-17-5,antiinflammatory,C3H5O4N3,2D,465.7373,351.2928,Active,CCOC,4P///wAIAAAIAAAAoFUBQQTyLo0AZtEApQo=
+CMP0080,Literature,Compound 080,Intermediate,4-oxo chloride,Synthetic sample 80. Screening hit.,19873-17-7,antiviral,C11H5O4N,2D,580.7163,518.9805,Weak,CCOC(=O)C,4P///wAIAAAOAAAAoIRJAI0DWN5MqQAiKtEAGFkFCQEJAA==
+CMP0081,ZINC,Compound 081,Intermediate,4-phenyl ester,Synthetic sample 81. Designed ligand.,53678-53-9,antibacterial,C11H4O2,2D,339.9232,127.9461,Weak,O=C(O)C(C)N,4P///wAIAAAMAAAAAgkAWQDSpsEAHQAo5QHigQiQCQA=
+CMP0082,ChEMBL,Compound 082,Polymer,propyl ester,Synthetic sample 82. Fragment.,86090-99-6,anticancer,C20H5O2N3,2D,296.3574,85.7823,Weak,c1ccccc1,4P///wAIAAADAAAAFQTpCEEKuQA=
+CMP0083,PubChem,Compound 083,Natural product,4-methyl ester,Synthetic sample 83. Fragment.,23727-37-5,unknown,C7H14ON,2D,683.3213,185.0424,Weak,CCOC,4P///wAIAAAIAAAAoFUBQQTyLo0AZtEApQo=
+CMP0084,ZINC,Compound 084,Small molecule,propyl sulfate,Synthetic sample 84. Designed ligand.,20318-30-2,anticancer,C15H2O3N2,2D,228.1477,116.5696,Moderate,C=CC(=O)O,4P///wAIAAAKAAAAFQRBAWZW4F0AIBUEWQI9AgkA
+CMP0085,Literature,Compound 085,Peptide,3-benzyl chloride,Synthetic sample 85. Lead-like.,48313-96-9,unknown,C15H18O3N3,3D,662.6684,504.2121,Inactive,CCN,4P///wAIAAAGAAAAoFUBuQX9AJbisQs=
+CMP0086,In-house,Compound 086,Small molecule,4-amino acid,Synthetic sample 86. Screening hit.,16441-46-1,anticancer,C9H28O4N,3D,118.7852,99.4652,Potent,C(C(=O)O)N,4P///wAIAAAKAAAANmjRAhECcQB5ABz1ANUGzQAJAA==
+CMP0087,In-house,Compound 087,Small molecule,2-acetyl sulfate,Synthetic sample 87. Fragment.,31003-59-1,enzyme inhibitor,C8HO2,3D,537.4705,405.2347,Inactive,C1=CC=CN=C1,4P///wAIAAAJAAAA6QMICl4pCIT9BBkCDLkA
+CMP0088,PubChem,Compound 088,Polymer,3-carboxyl chloride,Synthetic sample 88. Screening hit.,788-20-0,antiinflammatory,C7H9O4N3,2D,266.0762,109.3057,Active,C(C(=O)O)N,4P///wAIAAAKAAAANmjRAhECcQB5ABz1ANUGzQAJAA==
+CMP0089,ChEMBL,Compound 089,Natural product,N-ethyl acid,Synthetic sample 89. Designed ligand.,78315-78-0,analgesic,C5H18O3,2D,230.4232,113.2754,Active,CNC(=O)C,4P///wAIAAAKAAAA1QHGwQJxAEUBTrydAVqZBQkA
+CMP0090,ZINC,Compound 090,Polymer,amino sulfate,Synthetic sample 90. Screening hit.,72733-12-6,unknown,C2H40O3N2,2D,62.1817,46.7584,Moderate,c1ccccc1,4P///wAIAAADAAAAFQTpCEEKuQA=
+CMP0091,ChEMBL,Compound 091,Small molecule,4-propyl acid,Synthetic sample 91. Fragment.,71667-53-2,unknown,C16H40ON,2D,632.1428,328.9518,Moderate,COC(=O)C,4P///wAIAAAKAAAAKQhY3kK9ACIqvO0EAQMJAA==
+CMP0092,ChEMBL,Compound 092,Small molecule,2-phenyl ester,Synthetic sample 92. Screening hit.,52296-79-7,antiinflammatory,C2H12O2N2,3D,85.853,56.5782,Moderate,CCOC(=O)C,4P///wAIAAAOAAAAoIRJAI0DWN5MqQAiKtEAGFkFCQEJAA==
+CMP0093,PubChem,Compound 093,Polymer,N-carboxyl chloride,Synthetic sample 93. Fragment.,24586-73-7,enzyme inhibitor,C17H17N3,2D,501.84,389.2466,Weak,C1=CC=CN=C1,4P///wAIAAAJAAAA6QMICl4pCIT9BBkCDLkA
+CMP0094,In-house,Compound 094,Polymer,2-phenyl ester,Synthetic sample 94. Fragment.,58547-87-6,anticancer,C15H22O3,2D,733.7054,462.525,Potent,CCN(CC)CC,4P///wAIAAAIAAAAoKkAVCkHZPjdBY0EhA==
+CMP0095,In-house,Compound 095,Small molecule,N-phenyl sulfate,Synthetic sample 95. Lead-like.,4181-28-9,unknown,C2H8N,2D,324.7464,151.9807,Weak,c1ccccc1,4P///wAIAAADAAAAFQTpCEEKuQA=
+CMP0096,PubChem,Compound 096,Intermediate,N-phenyl ester,Synthetic sample 96. Designed ligand.,10177-83-2,enzyme inhibitor,C13H20O5N2,2D,135.0865,96.5831,Potent,C1CCCCC1,4P///wAIAAADAAAABG0Myu0N
+CMP0097,ZINC,Compound 097,Natural product,2-benzyl ester,Synthetic sample 97. Designed ligand.,28224-88-4,unknown,C7H7O,2D,724.0093,370.3871,Active,CCN,4P///wAIAAAGAAAAoFUBuQX9AJbisQs=
+CMP0098,In-house,Compound 098,Polymer,amino ester,Synthetic sample 98. Fragment.,20744-99-2,enzyme inhibitor,C17H14N,2D,227.5521,124.2014,Moderate,c1ccccc1,4P///wAIAAADAAAAFQTpCEEKuQA=
+CMP0099,ZINC,Compound 099,Intermediate,N-amino amide,Synthetic sample 99. Screening hit.,11400-18-4,CNS-active,C16H33O3N3,3D,105.313,92.7456,Active,CC#N,4P///wAIAAAGAAAAiQjmwqEAGQPweQY=
+CMP0100,Literature,Compound 100,Natural product,4-propyl sulfate,Synthetic sample 100. Screening hit.,23950-26-6,antibacterial,C4H33ON2,2D,291.9956,203.3844,Moderate,CCOC,4P///wAIAAAIAAAAoFUBQQTyLo0AZtEApQo=

@@ -20,6 +20,7 @@ type Data struct {
 	MS2         *string    `gorm:"column:MS2;type:VARCHAR(10)" json:"ms2,omitempty"`
 	Bioactivity *string    `gorm:"column:Bioactivity;type:VARCHAR(10)" json:"bioactivity,omitempty"`
 	Smiles      string     `gorm:"column:Smiles;type:TEXT;not null" json:"smiles"`
+	Fp          string     `gorm:"column:Fp;type:VARCHAR(50);not null" json:"fp"`
 	CreatedAt   *time.Time `gorm:"column:Created_At" json:"created_at,omitempty"`
 	UpdatedAt   *time.Time `gorm:"column:Updated_At" json:"updated_at,omitempty"`
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"backend/database"
 	"backend/router"
+	"backend/services"
 	"backend/utils"
 
 	"github.com/rs/zerolog/log"
@@ -14,6 +15,7 @@ func main() {
 	database.Init()
 	r := gin.Default()
 	router.Init(r)
+	services.InitRdkit()
 
 	err := r.Run(":9090")
 	if err != nil {

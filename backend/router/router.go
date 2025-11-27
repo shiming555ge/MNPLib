@@ -16,5 +16,16 @@ func Init(r *gin.Engine) {
 			data.GET("", controllers.GetDataRecords)
 			data.GET("/:id", controllers.GetDataByID)
 		}
+		// RDKit相关路由
+		rdkit := api.Group("/rdkit")
+		{
+			rdkit.GET("/status", controllers.GetRdkitStatus)
+			rdkit.GET("/similarity", controllers.SimilaritySearch)
+			rdkit.GET("/smiles-to-fingerprint", controllers.SmilesToFingerprint)
+			rdkit.GET("/smiles-to-pdb", controllers.SmilesToPDB)
+			rdkit.GET("/is-substructure", controllers.IsSubstructure)
+			rdkit.GET("/substructure-search", controllers.SubstructureSearch)
+			rdkit.GET("/exact-match", controllers.ExactMatchSearch)
+		}
 	}
 }
