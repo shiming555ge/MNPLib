@@ -51,13 +51,12 @@ func SmilesToFingerprint(c *gin.Context) {
 // SmilesToPDB SMILES转PDB文件
 func SmilesToPDB(c *gin.Context) {
 	smiles := c.Query("smiles")
-	outputFile := c.DefaultQuery("outputFile", "output.pdb")
 	if smiles == "" {
 		utils.JsonErrorResponse(c, 200400, "SMILES字符串不能为空")
 		return
 	}
 
-	result, err := services.SmilesToPDB(smiles, outputFile)
+	result, err := services.SmilesToPDB(smiles)
 	if err != nil {
 		utils.JsonErrorResponse(c, 200500, fmt.Sprintf("SMILES转PDB失败: %v", err))
 		return

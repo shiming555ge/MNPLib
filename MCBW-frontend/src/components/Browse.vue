@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import compoundCard from './compoundCard.vue';
+import CompoundDetail from './CompoundDetail.vue';
 const { t } = useI18n();
 
 // 响应式数据
@@ -11,6 +12,7 @@ const currentPage = ref(1);
 const itemsPerPage = ref(12);
 const totalItems = ref(0);
 const selectedCompound = ref(null);
+const showDetail = ref(false);
 
 // 从后端API获取数据
 const fetchCompounds = async (page = 1) => {
@@ -128,20 +130,7 @@ const setSearchMode = (mode) => {
 // 显示化合物详情
 const showCompoundDetail = (compound) => {
   selectedCompound.value = compound;
-  // 使用Bootstrap的JavaScript API来显示offcanvas
-  const offcanvasElement = document.getElementById('detailOffcanvas');
-  if (offcanvasElement) {
-    // 尝试使用Bootstrap 5的API
-    if (typeof bootstrap !== 'undefined' && bootstrap.Offcanvas) {
-      const offcanvas = new bootstrap.Offcanvas(offcanvasElement);
-      offcanvas.show();
-    } else {
-      // 备用方案：直接设置属性
-      offcanvasElement.classList.add('show');
-      offcanvasElement.style.visibility = 'visible';
-      document.body.classList.add('offcanvas-open');
-    }
-  }
+  showDetail.value = true;
 };
 
 // 组件挂载时获取数据
@@ -291,83 +280,12 @@ onMounted(() => {
                     </ul>
                 </nav>
             </div>
-            <!-- 卡片侧拉数据区域 -->
-            <div class="offcanvas offcanvas-end" tabindex="-1" id="detailOffcanvas" aria-labelledby="detailOffcanvasLabel">
-                <div class="offcanvas-header">
-                    <h5 class="offcanvas-title" id="detailOffcanvasLabel">
-                        {{ selectedCompound ? selectedCompound.ItemName?.replace(/"/g, "") || t('browse.compound_details') : t('browse.compound_details') }}
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                </div>
-                <div class="offcanvas-body">
-                    <div v-if="selectedCompound" class="compound-detail">
-                        <!-- 绘制分子结构 -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-primary text-white">
-                                <h6 class="card-title mb-0"><i class="bi bi-info-circle"></i> {{ t('browse.details.structure') }}</h6>
-                            </div>
-                            <canvas class="card-body" id="structure-canvas"></canvas>
-                        </div>
-                        <!-- 基本信息卡片 -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-primary text-white">
-                                <h6 class="card-title mb-0"><i class="bi bi-info-circle"></i> {{ t('browse.details.basic_info') }}</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <p><strong>{{ t('browse.details.id') }}:</strong> {{ selectedCompound.id || 'N/A' }}</p>
-                                        <p><strong>{{ t('browse.details.source') }}:</strong> {{ selectedCompound.source || 'N/A' }}</p>
-                                        <p><strong>{{ t('browse.details.compound_name') }}:</strong> {{ selectedCompound.item_name || 'N/A' }}</p>
-                                        <p><strong>{{ t('browse.details.type') }}:</strong> {{ selectedCompound.item_type || 'N/A' }}</p>
-                                        <p><strong>{{ t('browse.details.iupac_name') }}:</strong> {{ selectedCompound.iupac_name || 'N/A' }}</p>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <p><strong>{{ t('browse.details.description') }}:</strong> {{ selectedCompound.description || 'N/A' }}</p>
-                                        <p><strong>{{ t('browse.details.cas_number') }}:</strong> {{ selectedCompound.cas_number || 'N/A' }}</p>
-                                        <p><strong>{{ t('browse.details.formula') }}:</strong> {{ selectedCompound.formula || 'N/A' }}</p>
-                                        <p><strong>{{ t('browse.details.smiles') }}:</strong> {{ selectedCompound.smiles || 'N/A' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 分析数据卡片 -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-info text-white">
-                                <h6 class="card-title mb-0"><i class="bi bi-graph-up"></i> {{ t('browse.details.analysis_data') }}</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p><strong>MS1:</strong> {{ selectedCompound.ms1 || 'N/A' }}</p>
-                                        <p><strong>MS2:</strong> {{ selectedCompound.ms2 || 'N/A' }}</p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p><strong>{{ t('browse.details.bioactivity') }}:</strong> {{ selectedCompound.Bioactivity || 'N/A' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 其他信息卡片 -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-warning text-dark">
-                                <h6 class="card-title mb-0"><i class="bi bi-card-text"></i> {{ t('browse.details.other_info') }}</h6>
-                            </div>
-                            <div class="card-body row">
-                                <div class="col-6 p-1"><strong>{{ t('browse.details.tag') }}:</strong> {{ selectedCompound.ItemTag || 'N/A' }}</div>
-                                <div class="col-6 p-1"><strong>{{ t('browse.details.structure') }}:</strong> {{ selectedCompound.Structure || 'N/A' }}</div>
-                                <div class="col-6 p-1"><strong>{{ t('browse.details.created_at') }}:</strong> {{ selectedCompound.CreatedAt || 'N/A' }}</div>
-                                <div class="col-6 p-1"><strong>{{ t('browse.details.updated_at') }}:</strong> {{ selectedCompound.UpdatedAt || 'N/A' }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="text-center py-5">
-                        <p class="text-muted">{{ t('browse.select_compound') }}</p>
-                    </div>
-                </div>
-            </div>
+            <!-- 化合物详情组件 -->
+            <CompoundDetail 
+                :compound="selectedCompound"
+                :show="showDetail"
+                @update:show="showDetail = $event"
+            />
         </div>
     </div>
 </template>

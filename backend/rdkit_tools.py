@@ -4,13 +4,12 @@ from rdkit.Chem import AllChem
 import base64, json
 
 # smiles式转存pdb
-def smiles_to_pdb(smiles, out_file="output.pdb"):
+def smiles_to_pdb(smiles):
     mol = Chem.MolFromSmiles(smiles)
-    mol = Chem.AddHs(mol)                       # 加氢
+    # mol = Chem.AddHs(mol)                       # 加氢
     AllChem.EmbedMolecule(mol)                 # 3D 构象
     AllChem.UFFOptimizeMolecule(mol)           # UFF 优化
-    Chem.MolToPDBFile(mol, out_file)
-    return out_file
+    return Chem.MolToPDBBlock(mol)
 
 # 创建指纹生成器
 gen = Chem.rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
@@ -122,10 +121,9 @@ if __name__=="__main__":
             elif action == "smiles_to_pdb":
                 # SMILES转PDB
                 smiles = data.get("smiles")
-                output_file = data.get("outputFile", "output.pdb")
                 if smiles:
-                    result_file = smiles_to_pdb(smiles, output_file)
-                    response = {"id": msg_id, "reply": result_file}
+                    result = smiles_to_pdb(smiles)
+                    response = {"id": msg_id, "reply": result}
                 else:
                     response = {"id": msg_id, "reply": "error: missing smiles parameter"}
                     

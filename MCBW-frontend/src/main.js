@@ -7,9 +7,13 @@ import zh_cn from './locales/zh_cn.json';
 import en_us from './locales/en_us.json'
 
 const i18n = createI18n({
-    locale: "en_us",
-    fallbackLocale: "zh_cn",
-    messages: {zh_cn, en_us}
+    legacy: false, // 使用Composition API模式
+    locale: "zh_cn", // 默认使用中文
+    fallbackLocale: "en_us",
+    messages: {
+        zh_cn: zh_cn,
+        en_us: en_us
+    }
 })
 
 import router from './router';
@@ -21,5 +25,3 @@ const app = createApp(App)
 app.use(i18n)
 app.use(router)
 app.mount("#app")
-
-

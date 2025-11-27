@@ -152,8 +152,8 @@ func SmilesToFingerprint(smiles string) (string, error) {
 	return res, nil
 }
 
-// SmilesToPDB SMILES转PDB文件
-func SmilesToPDB(smiles string, outputFile string) (string, error) {
+// SmilesToPDB SMILES转PDB
+func SmilesToPDB(smiles string) (string, error) {
 	if p == nil {
 		errMsg := "RDkit进程未初始化"
 		utils.Log(errMsg)
@@ -161,9 +161,8 @@ func SmilesToPDB(smiles string, outputFile string) (string, error) {
 	}
 
 	requestData := map[string]interface{}{
-		"action":     "smiles_to_pdb",
-		"smiles":     smiles,
-		"outputFile": outputFile,
+		"action": "smiles_to_pdb",
+		"smiles": smiles,
 	}
 
 	requestJSON, err := json.Marshal(requestData)
