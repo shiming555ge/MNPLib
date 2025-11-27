@@ -41,6 +41,12 @@ func LogError(err error) {
 	}
 }
 
+// LogError 记录错误信息和发生时间
+func Log(msg string) {
+	logger.Log().Time("time", time.Now()).Msg(msg)
+	fmt.Println(msg) // 添加调试信息
+}
+
 // GetLogger 返回初始化的 logger
 func GetLogger() zerolog.Logger {
 	return logger
