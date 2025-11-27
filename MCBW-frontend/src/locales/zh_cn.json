@@ -1,0 +1,63 @@
+{
+    "navbar":{
+        "brand_for_short": "MCBW",
+        "brand_for_full": "Marine Compound Browser Website",
+        "home": "首页",
+        "browse": "浏览",
+        "query": "查询",
+        "help": "帮助"
+    },
+    "browse": {
+        "title": "筛选化合物",
+        "description": "根据不同类别从数据库中筛选化合物并展示",
+        "filter": "筛选",
+        "categories": "分类",
+        "loading": "加载中...",
+        "compound_type": "化合物类型",
+        "not_found": "未找到相关化合物记录",
+        "found": "已加载 %d 条化合物记录",
+        "compound_details": "化合物详情",
+        "details":{
+            "basic_info": "基本信息",
+            "analysis_data": "分析数据",
+            "other_info": "其他信息",
+            "id": "ID",
+            "source": "来源",
+            "description":"描述", 
+            "compound_name": "化合物名称",
+            "type": "类型",
+            "iupac_name": "IUPAC名称",
+            "formula": "分子式",
+            "cas_number": "CAS号",
+            "smiles": "SMILES",
+            "bioactivity": "生物活性",
+            "tag": "标签",
+            "structure": "结构",
+            "created_at": "创建时间",
+            "updated_at": "更新时间"
+        },
+        "select_compound": "请选择一个化合物查看详情"
+    },
+    "compound_card": {
+        "details": "查看详情"
+    },
+    "query": {
+        "title": "化学结构查询",
+        "description": "使用 Ketcher 化学编辑器绘制分子结构并进行搜索",
+        "search_control": "搜索控制",
+        "search_mode": "搜索模式",
+        "exact_structure": "精确结构匹配",
+        "substructure": "子结构搜索",
+        "similarity": "相似度搜索",
+        "execute_search": "执行搜索",
+        "get_structure": "获取结构",
+        "current_mode": "当前模式",
+        "quick_actions": "快捷操作",
+        "clear_canvas": "清除画布",
+        "save_structure": "保存结构",
+        "import_structure": "导入结构",
+        "chemical_editor": "化学结构编辑器",
+        "ketcher": "Ketcher",
+        "search": "搜索"
+    }
+}

@@ -1,0 +1,6 @@
+/log/log.log
+/log/userinfo.txt
+config.yaml
+
+go.sum
+go.mod

@@ -1,0 +1,71 @@
+{
+    "navbar":{
+        "brand_for_short": "MCBW",
+        "brand_for_full": "Marine Compound Browser Website",
+        "home": "Home",
+        "browse": "Browse",
+        "query": "Query",
+        "help": "Help"
+    },
+    "browse": {
+        "title": "Browse Compounds",
+        "description": "Filter and display compounds from the database by different categories",
+        "filter": "Filter",
+        "categories": "Categories",
+        "loading": "Loading...",
+        "compound_type": "Compound Type",
+        "not_found": "No compounds found",
+        "found": "Loaded %d compounds",
+        "compound_details": "Compound Details",
+        "details":{
+            "basic_info": "Basic Information",
+            "synonym_info": "Synonym Information",
+            "ccs_data": "CCS Data",
+            "other_info": "Other Information",
+            "id": "ID",
+            "group": "Group",
+            "description": "Description",
+            "compound_name": "Compound Name",
+            "type": "Type",
+            "iupac_name": "IUPAC Name",
+            "formula": "Formula",
+            "adduct": "Adduct",
+            "retention_time": "Retention Time",
+            "drift_time": "Drift Time",
+            "chinese_name": "Chinese Name",
+            "drugbank": "DrugBank",
+            "chemspider": "ChemSpider",
+            "cas_number": "CAS Number",
+            "ccs": "CCS",
+            "rccs": "rCCS",
+            "tag": "Tag",
+            "structure": "Structure",
+            "comment": "Comment",
+            "created_at": "Created At",
+            "updated_at": "Updated At"
+        },
+        "select_compound": "Please select a compound to view details"
+    },
+    "compound_card": {
+        "details": "View Details"
+    },
+    "query": {
+        "title": "Chemical Structure Query",
+        "description": "Use Ketcher chemical editor to draw molecular structures and search",
+        "search_control": "Search Control",
+        "search_mode": "Search Mode",
+        "exact_structure": "Exact Structure Match",
+        "substructure": "Substructure Search",
+        "similarity": "Similarity Search",
+        "execute_search": "Execute Search",
+        "get_structure": "Get Structure",
+        "current_mode": "Current Mode",
+        "quick_actions": "Quick Actions",
+        "clear_canvas": "Clear Canvas",
+        "save_structure": "Save Structure",
+        "import_structure": "Import Structure",
+        "chemical_editor": "Chemical Structure Editor",
+        "ketcher": "Ketcher",
+        "search": "Search"
+    }
+}

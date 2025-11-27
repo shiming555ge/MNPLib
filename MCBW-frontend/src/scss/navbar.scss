@@ -1,0 +1,15 @@
+.navbar-bg-primary{
+    background-color: $blue-700;
+}
+.navbar-bg-secondary{
+    background-color: $blue-300;
+    opacity: 0.95;
+}
+.nav-link{
+    color: white;
+    opacity: 0.8;
+}
+.nav-link.active{
+    color: gold;
+    opacity: 0.8;
+}
