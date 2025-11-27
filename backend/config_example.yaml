@@ -16,3 +16,6 @@ cookies:
   daomain: "localhost"
   secure: false
   httpOnly: false
+
+rdkit:
+  python_path: python
