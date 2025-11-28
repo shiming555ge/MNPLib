@@ -1,5 +1,5 @@
 # 项目结构
-MCBW-frontend/
+frontend/
 │ index.html        入口html文件
 │ vite.config.js    vite配置文件
 ├─ public/          公用资源
