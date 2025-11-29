@@ -4,8 +4,11 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
+	"os"
 	"os/exec"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -98,6 +101,18 @@ func NewPythonProcess(pythonPath string, pythonFile string) (*PythonProcess, err
 		}
 	}()
 
+	// 设置信号处理器，确保关闭
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-c
+		if p.IsRunning() {
+			p.Close()
+		}
+		os.Exit(0)
+	}()
+
 	return p, nil
 }
 
@@ -122,4 +137,40 @@ func (p *PythonProcess) SendAndWaitWithTimeout(msg string, timeout time.Duration
 		p.pending.Delete(req.ID)
 		return "", errors.New("Python进程响应超时")
 	}
+}
+
+// Close 关闭Python进程
+func (p *PythonProcess) Close() error {
+	if p.cmd == nil || p.cmd.Process == nil {
+		return nil
+	}
+
+	// 关闭发送队列
+	close(p.sendQueue)
+
+	// 清理所有pending的请求
+	p.pending.Range(func(key, value interface{}) bool {
+		p.pending.Delete(key)
+		return true
+	})
+
+	// 终止Python进程
+	return p.cmd.Process.Kill()
+}
+
+// IsRunning 检查Python进程是否仍在运行
+func (p *PythonProcess) IsRunning() bool {
+	if p.cmd == nil || p.cmd.Process == nil {
+		return false
+	}
+
+	// 检查进程状态
+	processState := p.cmd.ProcessState
+	if processState != nil && processState.Exited() {
+		return false
+	}
+
+	// 尝试发送信号检查进程是否存活
+	err := p.cmd.Process.Signal(os.Interrupt)
+	return err == nil
 }
