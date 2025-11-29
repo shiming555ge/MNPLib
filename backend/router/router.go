@@ -15,6 +15,10 @@ func Init(r *gin.Engine) {
 		{
 			data.GET("", controllers.GetDataRecords)
 			data.GET("/:id", controllers.GetDataByID)
+			data.GET("/statistics", controllers.GetDataStatistics)
+			data.GET("/filter", controllers.FilterCompounds)
+			data.GET("/item-types", controllers.GetItemTypes)
+			data.GET("/descriptions", controllers.GetDescriptions)
 		}
 		// RDKit相关路由
 		rdkit := api.Group("/rdkit")

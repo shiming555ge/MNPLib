@@ -29,12 +29,76 @@
   - `id` (路径参数): 数据ID
 - **响应**: 单条数据记录
 
+#### 获取数据统计信息
+- **URL**: `GET /api/data/statistics`
+- **描述**: 返回化合物数量、物种数量、活性数据量、质谱数据量、核磁数据量等统计信息
+- **响应**: 
+  ```json
+  {
+    "total_compounds": 1000,
+    "total_species": 500,
+    "bioactivity_data": 300,
+    "ms_data": 200,
+    "nmr_data": 150
+  }
+  ```
+
+#### 筛选化合物
+- **URL**: `GET /api/data/filter`
+- **描述**: 根据ItemType、分子量范围和Description进行筛选，支持数组参数
+- **参数**:
+  - `limit` (可选): 返回的记录数量，默认为10，最大100
+  - `offset` (可选): 从第几条记录开始，默认为0
+  - `item_type` (可选): ItemType分类数组，可传入多个值
+  - `min_weight` (可选): 最小分子量
+  - `max_weight` (可选): 最大分子量
+  - `description` (可选): Description描述数组，可传入多个值
+- **使用示例**:
+  - 单个ItemType: `/api/data/filter?item_type=分类1`
+  - 多个ItemType: `/api/data/filter?item_type=分类1&item_type=分类2&item_type=分类3`
+  - 多个Description: `/api/data/filter?description=描述1&description=描述2`
+  - 组合筛选: `/api/data/filter?item_type=分类1&item_type=分类2&description=描述1&min_weight=100&max_weight=500`
+- **响应**: 
+  ```json
+  {
+    "data": [...],
+    "total": 50,
+    "limit": 10,
+    "offset": 0,
+    "has_more": true,
+    "next_offset": 10
+  }
+  ```
+
+#### 获取所有ItemType分类
+- **URL**: `GET /api/data/item-types`
+- **描述**: 返回所有可用的ItemType分类
+- **响应**: ItemType分类列表
+  ```json
+  ["分类1", "分类2", "分类3"]
+  ```
+
+#### 获取所有Description分类
+- **URL**: `GET /api/data/descriptions`
+- **描述**: 返回所有可用的Description分类
+- **响应**: Description分类列表
+  ```json
+  ["描述1", "描述2", "描述3"]
+  ```
+
 ### RDKit 化学计算 API
 
 #### 获取RDKit服务状态
 - **URL**: `GET /api/rdkit/status`
 - **描述**: 检查RDKit服务是否正常运行
 - **响应**: 服务状态信息
+  ```json
+  {
+    "initialized": true,
+    "available": true,
+    "status": "running"
+  }
+  ```
 
 #### 相似度搜索
 - **URL**: `GET /api/rdkit/similarity`
@@ -56,7 +120,6 @@
 - **描述**: 将SMILES字符串转换为PDB文件
 - **参数**:
   - `smiles` (必需): SMILES字符串
-  - `outputFile` (可选): 输出文件名，默认为"output.pdb"
 - **响应**: PDB文件数据
 
 #### 子结构匹配

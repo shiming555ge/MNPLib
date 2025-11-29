@@ -1,5 +1,5 @@
 from rdkit import Chem, DataStructs
-from rdkit.Chem import AllChem
+from rdkit.Chem import AllChem, Descriptors
 
 import base64, json
 
@@ -59,6 +59,13 @@ def exact_match_search(query_smiles, library):
         if db_mol is not None and query_mol.HasSubstructMatch(db_mol) and db_mol.HasSubstructMatch(query_mol):
             result.append(item['id'])
     return result
+
+# 计算分子量
+def calculate_molecular_weight(smiles):
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
+    return Descriptors.MolWt(mol)
 
 if __name__=="__main__":
     # 模式
@@ -156,6 +163,18 @@ if __name__=="__main__":
                     response = {"id": msg_id, "reply": json.dumps(results)}
                 else:
                     response = {"id": msg_id, "reply": "error: missing smiles or library parameter"}
+                    
+            elif action == "calculate_molecular_weight":
+                # 计算分子量
+                smiles = data.get("smiles")
+                if smiles:
+                    weight = calculate_molecular_weight(smiles)
+                    if weight is not None:
+                        response = {"id": msg_id, "reply": str(weight)}
+                    else:
+                        response = {"id": msg_id, "reply": "error: invalid smiles"}
+                else:
+                    response = {"id": msg_id, "reply": "error: missing smiles parameter"}
                     
             else:
                 response = {"id": msg_id, "reply": "error: unknown action"}

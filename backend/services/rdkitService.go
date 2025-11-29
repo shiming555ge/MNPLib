@@ -3,6 +3,7 @@ package services
 import (
 	"backend/config"
 	"backend/database"
+	"backend/models"
 	"backend/utils"
 	"encoding/json"
 	"fmt"
@@ -315,4 +316,89 @@ func ExactMatchSearch(smiles string) (string, error) {
 	}
 
 	return res, nil
+}
+
+// FilterCompounds 筛选化合物 - 根据ItemType、分子量范围和Description进行筛选，支持数组参数
+func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descriptions []string, limit, offset int) ([]models.Data, int64, error) {
+	// 构建查询条件
+	query := database.GetDB().Table("data")
+
+	// ItemType筛选 - 支持数组
+	if len(itemTypes) > 0 {
+		query = query.Where("Item_Type IN (?)", itemTypes)
+	}
+
+	// Description筛选 - 支持数组
+	if len(descriptions) > 0 {
+		// 为每个description创建LIKE条件
+		likeConditions := make([]string, len(descriptions))
+		likeArgs := make([]interface{}, len(descriptions))
+		for i, desc := range descriptions {
+			likeConditions[i] = "Description LIKE ?"
+			likeArgs[i] = "%" + desc + "%"
+		}
+		// 使用OR连接多个LIKE条件
+		query = query.Where(strings.Join(likeConditions, " OR "), likeArgs...)
+	}
+
+	// 分子量筛选 - 使用Weight字段
+	if minWeight > 0 || maxWeight > 0 {
+		if minWeight > 0 {
+			query = query.Where("Weight >= ?", minWeight)
+		}
+		if maxWeight > 0 {
+			query = query.Where("Weight <= ?", maxWeight)
+		}
+	}
+
+	// 获取总记录数
+	var totalCount int64
+	countQuery := query
+	result := countQuery.Count(&totalCount)
+	if result.Error != nil {
+		utils.LogError(result.Error)
+		return nil, 0, fmt.Errorf("获取总记录数失败: %v", result.Error)
+	}
+
+	// 应用分页并获取数据
+	var compounds []models.Data
+	result = query.Offset(offset).Limit(limit).Find(&compounds)
+	if result.Error != nil {
+		utils.LogError(result.Error)
+		return nil, 0, fmt.Errorf("数据库查询失败: %v", result.Error)
+	}
+
+	return compounds, totalCount, nil
+}
+
+// GetItemTypes 获取所有ItemType分类
+func GetItemTypes() ([]string, error) {
+	var itemTypes []string
+	result := database.GetDB().Table("data").
+		Where("Item_Type IS NOT NULL AND Item_Type != ''").
+		Distinct("Item_Type").
+		Pluck("Item_Type", &itemTypes)
+
+	if result.Error != nil {
+		utils.LogError(result.Error)
+		return nil, fmt.Errorf("获取ItemType分类失败: %v", result.Error)
+	}
+
+	return itemTypes, nil
+}
+
+// GetDescriptions 获取所有Description分类
+func GetDescriptions() ([]string, error) {
+	var descriptions []string
+	result := database.GetDB().Table("data").
+		Where("Description IS NOT NULL AND Description != ''").
+		Distinct("Description").
+		Pluck("Description", &descriptions)
+
+	if result.Error != nil {
+		utils.LogError(result.Error)
+		return nil, fmt.Errorf("获取Description分类失败: %v", result.Error)
+	}
+
+	return descriptions, nil
 }

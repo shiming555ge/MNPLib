@@ -16,6 +16,8 @@ type Data struct {
 	ItemTag     *string    `gorm:"column:Item_Tag;type:VARCHAR(30)" json:"item_tag,omitempty"`
 	Formula     *string    `gorm:"column:Formula;type:VARCHAR(80)" json:"formula,omitempty"`
 	Structure   *string    `gorm:"column:Structure;type:TEXT" json:"structure,omitempty"`
+	Weight      *float32   `gorm:"column:Weight;type:FLOAT" json:"weight,omitempty"`
+	NMR         *string    `gorm:"column:NMR;type:VARCHAR(10)" json:"nmr,omitempty"`
 	MS1         *string    `gorm:"column:MS1;type:VARCHAR(10)" json:"ms1,omitempty"`
 	MS2         *string    `gorm:"column:MS2;type:VARCHAR(10)" json:"ms2,omitempty"`
 	Bioactivity *string    `gorm:"column:Bioactivity;type:VARCHAR(10)" json:"bioactivity,omitempty"`

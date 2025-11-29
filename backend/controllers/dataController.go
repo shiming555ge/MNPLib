@@ -3,6 +3,7 @@ package controllers
 import (
 	"backend/database"
 	"backend/models"
+	"backend/services"
 	"backend/utils"
 	"strconv"
 
@@ -105,4 +106,161 @@ func GetDataByID(c *gin.Context) {
 	}
 
 	utils.JsonSuccessResponse(c, data)
+}
+
+// GetDataStatistics 获取数据统计信息
+// @Summary 获取数据统计
+// @Description 返回化合物数量、物种数量、活性数据量、质谱数据量、核磁数据量等统计信息
+// @Tags data
+// @Accept json
+// @Produce json
+// @Success 200 {object} utils.JSONResponse{data=map[string]interface{}}
+// @Failure 500 {object} utils.JSONResponse
+// @Router /api/data/statistics [get]
+func GetDataStatistics(c *gin.Context) {
+	db := database.GetDB()
+
+	// 定义统计结果结构
+	var stats struct {
+		TotalCompounds  int64 `json:"total_compounds"`
+		TotalSpecies    int64 `json:"total_species"`
+		BioactivityData int64 `json:"bioactivity_data"`
+		MSData          int64 `json:"ms_data"`
+		NMRData         int64 `json:"nmr_data"`
+	}
+
+	// 获取总化合物数量（总记录数）
+	db.Model(&models.Data{}).Count(&stats.TotalCompounds)
+
+	// 获取物种数量（固定值，这里假设是ItemType不为空的记录数）
+	db.Model(&models.Data{}).Where("Item_Type IS NOT NULL AND Item_Type != ''").Count(&stats.TotalSpecies)
+
+	// 获取活性数据量（Bioactivity不为空的数量）
+	db.Model(&models.Data{}).Where("Bioactivity IS NOT NULL AND Bioactivity != ''").Count(&stats.BioactivityData)
+
+	// 获取质谱数据量（MS1或MS2不为空的数量）
+	db.Model(&models.Data{}).Where("MS1 IS NOT NULL AND MS1 != '' OR MS2 IS NOT NULL AND MS2 != ''").Count(&stats.MSData)
+
+	// 获取核磁数据量（NMR不为空的数量）
+	db.Model(&models.Data{}).Where("NMR IS NOT NULL AND NMR != ''").Count(&stats.NMRData)
+
+	utils.JsonSuccessResponse(c, stats)
+}
+
+// FilterCompounds 筛选化合物
+// @Summary 筛选化合物
+// @Description 根据ItemType、分子量范围和Description进行筛选，支持数组参数
+// @Tags data
+// @Accept json
+// @Produce json
+// @Param limit query int false "返回的记录数量，默认为10"
+// @Param offset query int false "从第几条记录开始，默认为0"
+// @Param item_type query []string false "ItemType分类数组" collectionFormat(multi)
+// @Param min_weight query number false "最小分子量"
+// @Param max_weight query number false "最大分子量"
+// @Param description query []string false "Description描述数组" collectionFormat(multi)
+// @Success 200 {object} utils.JSONResponse{data=[]models.Data}
+// @Failure 500 {object} utils.JSONResponse
+// @Router /api/data/filter [get]
+func FilterCompounds(c *gin.Context) {
+	// 获取查询参数
+	limitStr := c.DefaultQuery("limit", "10")
+	offsetStr := c.DefaultQuery("offset", "0")
+	itemTypes := c.QueryArray("item_type")
+	minWeightStr := c.Query("min_weight")
+	maxWeightStr := c.Query("max_weight")
+	descriptions := c.QueryArray("description")
+
+	// 转换参数为整数
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		utils.JsonErrorResponse(c, 200400, "参数limit必须是正整数")
+		return
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		utils.JsonErrorResponse(c, 200400, "参数offset必须是非负整数")
+		return
+	}
+
+	// 限制最大查询数量
+	if limit > 100 {
+		limit = 100
+	}
+
+	// 转换分子量参数
+	var minWeight, maxWeight float64
+
+	if minWeightStr != "" {
+		minWeight, err = strconv.ParseFloat(minWeightStr, 64)
+		if err != nil {
+			utils.JsonErrorResponse(c, 200400, "参数min_weight必须是数字")
+			return
+		}
+	}
+
+	if maxWeightStr != "" {
+		maxWeight, err = strconv.ParseFloat(maxWeightStr, 64)
+		if err != nil {
+			utils.JsonErrorResponse(c, 200400, "参数max_weight必须是数字")
+			return
+		}
+	}
+
+	// 调用筛选服务，传入分页参数和数组参数
+	compounds, totalCount, err := services.FilterCompounds(itemTypes, minWeight, maxWeight, descriptions, limit, offset)
+	if err != nil {
+		utils.JsonErrorResponse(c, 200500, "筛选化合物失败")
+		return
+	}
+
+	response := map[string]interface{}{
+		"data":        compounds,
+		"total":       totalCount,
+		"limit":       limit,
+		"offset":      offset,
+		"has_more":    offset+limit < int(totalCount),
+		"next_offset": offset + limit,
+	}
+
+	utils.JsonSuccessResponse(c, response)
+}
+
+// GetItemTypes 获取所有ItemType分类
+// @Summary 获取ItemType分类
+// @Description 返回所有可用的ItemType分类
+// @Tags data
+// @Accept json
+// @Produce json
+// @Success 200 {object} utils.JSONResponse{data=[]string}
+// @Failure 500 {object} utils.JSONResponse
+// @Router /api/data/item-types [get]
+func GetItemTypes(c *gin.Context) {
+	itemTypes, err := services.GetItemTypes()
+	if err != nil {
+		utils.JsonErrorResponse(c, 200500, "获取ItemType分类失败")
+		return
+	}
+
+	utils.JsonSuccessResponse(c, itemTypes)
+}
+
+// GetDescriptions 获取所有Description分类
+// @Summary 获取Description分类
+// @Description 返回所有可用的Description分类
+// @Tags data
+// @Accept json
+// @Produce json
+// @Success 200 {object} utils.JSONResponse{data=[]string}
+// @Failure 500 {object} utils.JSONResponse
+// @Router /api/data/descriptions [get]
+func GetDescriptions(c *gin.Context) {
+	descriptions, err := services.GetDescriptions()
+	if err != nil {
+		utils.JsonErrorResponse(c, 200500, "获取Description分类失败")
+		return
+	}
+
+	utils.JsonSuccessResponse(c, descriptions)
 }
