@@ -26,7 +26,8 @@
         "min_weight": "最小",
         "max_weight": "最大",
         "multiple_select_hint": "按住Ctrl键可多选",
-        "expand": "展开"
+        "expand": "展开",
+        "collapse": "收起"
     },
     "details": {
         "basic_info": "基本信息",

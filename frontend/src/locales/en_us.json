@@ -26,7 +26,8 @@
         "min_weight": "Min",
         "max_weight": "Max",
         "multiple_select_hint": "Hold Ctrl to select multiple",
-        "expand": "expand"
+        "expand": "expand",
+        "collapse":"collapse"
     },
     "details": {
         "basic_info": "Basic Information",

@@ -179,7 +179,7 @@ const getStatIcon = (key) => {
 
 <style scoped>
 .gallery-wrapper {
-  margin-top: 90px; /* prevent overlap with navbar */
+  margin-top: 50px; /* prevent overlap with navbar */
   position: relative;
   height: 70vh;
   overflow: hidden;

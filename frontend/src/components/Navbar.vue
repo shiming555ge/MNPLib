@@ -1,12 +1,9 @@
 <template>
     <nav class="navbar navbar-expand-lg text-white navbar-bg-primary sticky-top z-2">
       <div class="container-fluid">
-        <!-- 左侧品牌名称 - 上下分布 -->
         <a class="navbar-brand text-light p-3" href="#">
-          <div class="d-flex flex-column">
             <span class="fs-1 fw-bold">{{ t("navbar.brand_for_short") }}</span>
-            <span class="fs-6">{{ t("navbar.brand_for_full") }}</span>
-          </div>
+            <span class="fs-6 p-3">{{ t("navbar.brand_for_full") }}</span>
         </a>
         
         <!-- 移动端汉堡菜单按钮 -->

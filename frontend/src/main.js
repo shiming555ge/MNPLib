@@ -8,7 +8,7 @@ import en_us from './locales/en_us.json'
 
 const i18n = createI18n({
     legacy: false, // 使用Composition API模式
-    locale: "zh_cn", // 默认使用中文
+    locale: "en_us",
     fallbackLocale: "en_us",
     messages: {
         zh_cn: zh_cn,
