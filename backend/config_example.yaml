@@ -19,3 +19,6 @@ cookies:
 
 rdkit:
   python_path: python
+
+static: false
+adress_port: ":9090"

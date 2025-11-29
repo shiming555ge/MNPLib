@@ -1,6 +1,7 @@
 package router
 
 import (
+	"backend/config"
 	"backend/controllers"
 
 	"github.com/gin-gonic/gin"
@@ -31,5 +32,9 @@ func Init(r *gin.Engine) {
 			rdkit.GET("/substructure-search", controllers.SubstructureSearch)
 			rdkit.GET("/exact-match", controllers.ExactMatchSearch)
 		}
+	}
+
+	if config.Config.GetBool("static") {
+		r.Static("/", "./www")
 	}
 }
