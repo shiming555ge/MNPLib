@@ -17,7 +17,15 @@
         "not_found": "No compounds found",
         "found": "Loaded %d compounds",
         "compound_details": "Compound Details",
-        "select_compound": "Please select a compound to view details"
+        "select_compound": "Please select a compound to view details",
+        "molecular_weight_range": "Molecular Weight Range",
+        "description_category": "Description Category",
+        "apply_filters": "Apply Filters",
+        "reset_filters": "Reset Filters",
+        "current_filters": "Current Filter Conditions",
+        "min_weight": "Min",
+        "max_weight": "Max",
+        "multiple_select_hint": "Hold Ctrl to select multiple"
     },
     "details": {
         "basic_info": "Basic Information",
@@ -96,6 +104,13 @@
         "stats1_label": "Total Compounds",
         "stats2_label": "Bioactive Compounds",
         "stats3_label": "Marine Sources",
-        "stats4_label": "Research Papers"
+        "stats4_label": "Research Papers",
+        "data_statistics": "Data Statistics",
+        "compounds": "Compounds",
+        "organisms": "Organisms",
+        "bioactivities": "Bioactivities",
+        "nmr": "NMR",
+        "ms": "MS/MS",
+        "data_info": "Real-time database statistics"
     }
 }

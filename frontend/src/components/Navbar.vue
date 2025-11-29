@@ -1,5 +1,5 @@
 <template>
-    <nav class="navbar navbar-expand-lg text-white navbar-bg-primary fixed-top z-2">
+    <nav class="navbar navbar-expand-lg text-white navbar-bg-primary sticky-top z-2">
       <div class="container-fluid">
         <!-- 左侧品牌名称 - 上下分布 -->
         <a class="navbar-brand text-light p-3" href="#">

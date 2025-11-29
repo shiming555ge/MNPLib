@@ -1,8 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import compoundCard from './compoundCard.vue';
 import CompoundDetail from './CompoundDetail.vue';
+// 引入新组件
+import FilterPanel from './FilterPanel.vue';
+
 const { t } = useI18n();
 
 // 响应式数据
@@ -14,278 +17,285 @@ const totalItems = ref(0);
 const selectedCompound = ref(null);
 const showDetail = ref(false);
 
-// 从后端API获取数据
+// 筛选条件 (严格对应 API 参数)
+const filters = ref({
+  item_type: [],     // 数组
+  description: [],   // 数组
+  min_weight: '',
+  max_weight: ''
+});
+
+// 分类数据
+const itemTypes = ref([]);
+const descriptions = ref([]);
+
+// 1. 获取分类选项
+const fetchOptions = async () => {
+  try {
+    const [typesRes, descRes] = await Promise.all([
+      fetch('/api/data/item-types'),
+      fetch('/api/data/descriptions')
+    ]);
+    
+    if (typesRes.ok) {
+      const result = await typesRes.json();
+      itemTypes.value = result.data || result; // 兼容直接返回数组的情况
+    }
+    if (descRes.ok) {
+      const result = await descRes.json();
+      descriptions.value = result.data || result;
+    }
+  } catch (error) {
+    console.error('Fetch options error:', error);
+  }
+};
+
+// 2. 核心：获取数据 (解决数组传参问题)
 const fetchCompounds = async (page = 1) => {
   loading.value = true;
   try {
-    const limit = itemsPerPage.value;
-    const offset = (page - 1) * itemsPerPage.value;
+    const params = new URLSearchParams();
     
-    const response = await fetch(`/api/data?limit=${limit}&offset=${offset}`);
+    // 基本分页参数
+    params.append('limit', itemsPerPage.value);
+    params.append('offset', (page - 1) * itemsPerPage.value);
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // --- 关键：数组参数处理 ---
+    // 遍历数组，生成 ?item_type=A&item_type=B 格式
+    if (filters.value.item_type && filters.value.item_type.length) {
+      filters.value.item_type.forEach(val => params.append('item_type', val));
     }
     
+    if (filters.value.description && filters.value.description.length) {
+      filters.value.description.forEach(val => params.append('description', val));
+    }
+    
+    // 普通参数
+    if (filters.value.min_weight) params.append('min_weight', filters.value.min_weight);
+    if (filters.value.max_weight) params.append('max_weight', filters.value.max_weight);
+    
+    // 调用 API
+    const response = await fetch(`/api/data/filter?${params.toString()}`);
+    
+    if (!response.ok) throw new Error(`Status: ${response.status}`);
+    
     const result = await response.json();
-    console.log(result)
-    compounds.value = result.data.data || [];
-    totalItems.value = result.data.total || 0;
+    
+    // 兼容 API 响应结构
+    const dataNode = result.data.data ? result.data : result; 
+    compounds.value = dataNode.data || [];
+    totalItems.value = dataNode.total || 0;
     currentPage.value = page;
+
   } catch (error) {
-    console.error('Failed to fetch compounds:', error);
-    // 如果API调用失败，使用模拟数据作为fallback
-    // compounds.value = generateMockData();
-    // totalItems.value = compounds.value.length;
+    console.error('Fetch error:', error);
+    compounds.value = [];
   } finally {
     loading.value = false;
   }
 };
 
-// // 生成模拟数据作为fallback
-// const generateMockData = () => {
-//   const mockData = [];
-//   for (let i = 1; i <= itemsPerPage.value; i++) {
-//     mockData.push({
-//       ID: `CMP${i}`,
-//       Source: 'Mock Source',
-//       ItemName: `Compound ${i}`,
-//       ItemType: 'Natural Product',
-//       IUPACName: `IUPAC Name ${i}`,
-//       Description: `This is a description for compound ${i}`,
-//       CASNumber: `123-45-${i}`,
-//       ItemTag: 'Tag',
-//       Formula: 'C10H12O2',
-//       Structure: 'Structure data',
-//       MS1: 'MS1',
-//       MS2: 'MS2',
-//       Bioactivity: 'Active',
-//       Smiles: 'C1=CC=CC=C1',
-//       CreatedAt: new Date(),
-//       UpdatedAt: new Date()
-//     });
-//   }
-//   return mockData;
-// };
-
-// 分页相关方法
-const totalPages = () => {
-  return Math.ceil(totalItems.value / itemsPerPage.value);
-};
-
+// 分页与交互逻辑
+const totalPages = () => Math.ceil(totalItems.value / itemsPerPage.value);
 const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages()) {
-    fetchCompounds(page);
-  }
+  if (page >= 1 && page <= totalPages()) fetchCompounds(page);
 };
 
-// 获取要显示的页码数组（智能分页）
-const getDisplayPages = () => {
-  const total = totalPages();
-  const current = currentPage.value;
-  const pages = [];
-  
-  // 如果总页数小于等于7，显示所有页码
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) {
-      pages.push(i);
+const applyFilters = () => {
+  // 移动端点击应用后，触发筛选并自动关闭 Offcanvas
+  currentPage.value = 1;
+  fetchCompounds(1);
+};
+
+const resetFilters = () => {
+  filters.value = {
+    item_type: [],
+    description: [],
+    min_weight: '',
+    max_weight: ''
+  };
+  currentPage.value = 1;
+  fetchCompounds(1);
+};
+
+// 统计当前筛选数量 (用于移动端按钮上的红点)
+const activeFilterCount = computed(() => {
+  let count = filters.value.item_type.length + filters.value.description.length;
+  if (filters.value.min_weight || filters.value.max_weight) count++;
+  return count;
+});
+
+const getDisplayPages = () => { /* ...保持原有的分页逻辑... */ 
+    const total = totalPages();
+    const current = currentPage.value;
+    const pages = [];
+    if (total <= 7) {
+        for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+        if (current <= 4) {
+            for (let i = 1; i <= 5; i++) pages.push(i);
+            pages.push('...', total);
+        } else if (current >= total - 3) {
+            pages.push(1, '...');
+            for (let i = total - 4; i <= total; i++) pages.push(i);
+        } else {
+            pages.push(1, '...', current - 1, current, current + 1, '...', total);
+        }
     }
     return pages;
-  }
-  
-  // 显示当前页附近的页码
-  if (current <= 4) {
-    // 前几页
-    for (let i = 1; i <= 5; i++) {
-      pages.push(i);
-    }
-    pages.push('...');
-    pages.push(total);
-  } else if (current >= total - 3) {
-    // 后几页
-    pages.push(1);
-    pages.push('...');
-    for (let i = total - 4; i <= total; i++) {
-      pages.push(i);
-    }
-  } else {
-    // 中间页
-    pages.push(1);
-    pages.push('...');
-    for (let i = current - 1; i <= current + 1; i++) {
-      pages.push(i);
-    }
-    pages.push('...');
-    pages.push(total);
-  }
-  
-  return pages;
 };
 
-const setSearchMode = (mode) => {
-  // 这里可以添加搜索模式切换的逻辑
-  console.log('Search mode set to:', mode);
-};
-
-// 显示化合物详情
-const showCompoundDetail = (compound) => {
-  selectedCompound.value = compound;
-  showDetail.value = true;
-};
-
-// 组件挂载时获取数据
 onMounted(() => {
+  fetchOptions();
   fetchCompounds(1);
 });
 </script>
 
 <template>
-    <div class="container-fluid py-4">
-        <!-- 页面标题和筛选按钮 -->
-        <div class="rowmb-4  align-items-center ">
-            <!-- 页面标题 -->
-            <div class="col-12">
-                <h1 class="display-6 text-primary fw-bold">{{ t('browse.title') }}</h1>
-                <p class="text-muted">{{ t('browse.description') }}</p>
-            </div>
-            <!-- 标题行 -->    
-            </div>
-            <div class="fixed-top d-md-none start-0" style="top: 30%;">
-                <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#filterOffcanvas" aria-controls="filterOffcanvas">
-                    <i class="bi bi-filter-left"></i>
-                </button>
+  <div class="container-fluid py-4 bg-light min-vh-100">
+    
+    <div class="row align-items-end mb-4">
+      <div class="col">
+        <h1 class="display-6 text-primary fw-bold mb-1">{{ t('browse.title') }}</h1>
+        <p class="text-muted mb-0">{{ t('browse.description') }}</p>
+      </div>
+      
+      <div class="col-auto d-md-none">
+        <button 
+          class="btn btn-white border shadow-sm position-relative rounded-pill px-3" 
+          type="button" 
+          data-bs-toggle="offcanvas" 
+          data-bs-target="#filterOffcanvas"
+        >
+          <i class="bi bi-funnel"></i> {{ t('browse.filter') }}
+          <span 
+            v-if="activeFilterCount > 0" 
+            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+          >
+            {{ activeFilterCount }}
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <div class="row g-4" style="position: relative;">
+      
+      <div class="col-md-3 d-none d-md-block">
+        <div class="card shadow-sm border-0 sticky-top custom-sticky-sidebar" style="top: 120px; z-index: 900;">
+          <div class="card-header bg-white pt-3 pb-2 border-bottom-0">
+             <h6 class="fw-bold mb-0"><i class="bi bi-sliders me-2"></i>{{ t('browse.filter') }}</h6>
+          </div>
+          <div class="card-body pt-0">
+            <FilterPanel 
+              :filters="filters"
+              :itemTypes="itemTypes"
+              :descriptions="descriptions"
+              :loading="loading"
+              @apply="applyFilters"
+              @reset="resetFilters"
+            />
+          </div>
         </div>
+      </div>
 
-        <!-- 移动端筛选侧边栏 -->
-        <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="filterOffcanvas" aria-labelledby="filterOffcanvasLabel">
-            <div class="offcanvas-header">
-                <h5 class="offcanvas-title" id="filterOffcanvasLabel">{{ t("browse.filter") }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-            </div>
-            <div class="offcanvas-body">
-                <div class="filter-section">
-                    <h6 class="fw-bold">{{ t("browse.categories") }}</h6>
-                    <!-- 这里可以添加筛选选项 -->
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="category1">
-                        <label class="form-check-label" for="category1">
-                            Category 1
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="category2">
-                        <label class="form-check-label" for="category2">
-                            Category 2
-                        </label>
-                    </div>
-                </div>
-            </div>
+      <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="filterOffcanvas" data-bs-backdrop="static">
+        <div class="offcanvas-header bg-light border-bottom">
+          <h5 class="offcanvas-title fw-bold">
+            <i class="bi bi-funnel-fill text-primary me-2"></i>{{ t("browse.filter") }}
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
-
-        <!-- 主要内容区域 -->
-        <div class="row">
-            <!-- 桌面端筛选列 -->
-            <div class="card shadow-sm border-0 mt-3 col-md-3 d-none d-md-block">
-                <div class="card-header bg-primary text-white">
-                    <h6 class="card-title mb-0">
-                    <i class="bi bi-filter-left"></i> {{ t('browse.filter') }}
-                    </h6>
-                </div>
-                <!-- 筛选组 -->
-                <div class="card-body"> 
-                    <!-- 筛选组类型    -->
-                    <label class="form-label fw-semibold">{{ t('browse.compound_type') }}</label>
-                    <!-- 筛选组按钮组 -->
-                    <div class="btn-group-vertical w-100" role="group">
-                        <button
-                            type="button"
-                            class="btn btn-outline-primary text-start"
-                            :class="{ 'active': searchMode === 'structure' }"
-                            @click="setSearchMode('structure')"
-                        >
-                            Piptide
-                        </button>
-                        <button
-                            type="button"
-                            class="btn btn-outline-primary text-start"
-                            :class="{ 'active': searchMode === 'substructure' }"
-                            @click="setSearchMode('substructure')"
-                        >
-                            Alkloid
-                        </button>
-                        <button
-                            type="button"
-                            class="btn btn-outline-primary text-start"
-                            :class="{ 'active': searchMode === 'similarity' }"
-                            @click="setSearchMode('similarity')"
-                        >
-                            Piperazine
-                        </button>
-                    </div>
-                
-                </div>
-            </div>
-
-            <!-- 卡片展示区域 -->
-            <div class="col-12 col-md-9">
-                <!-- 加载状态 -->
-                <div v-if="loading" class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">{{ t('browse.loading') }}</span>
-                    </div>
-                    <p class="mt-2 text-muted">{{ t('browse.loading') }}</p>
-                </div>
-                
-                <!-- 调试信息 -->
-                <div v-if="!loading && totalItems === 0" class="text-center py-5">
-                    <p class="text-muted">{{ t('browse.not_found') }}</p>
-                </div>
-                
-                <!-- 调试信息：显示实际数据 -->
-                <div v-else-if="!loading && totalItems > 0" class="mb-3">
-                    <p class="text-muted small">{{ t('browse.found').replace("%d", compounds.length) }}</p>
-                </div>
-                
-                <!-- 化合物卡片 -->
-                <div v-if="!loading && totalItems > 0" class="row g-3">
-                    <compoundCard 
-                        v-for="compound in compounds" 
-                        :key="compound.ID" 
-                        :compound="compound"
-                        @show-detail="showCompoundDetail(compound)"
-                    />
-                </div>
-                
-                <!-- 页尾导航 -->
-                <nav v-if="!loading && totalPages() > 1" aria-label="Page navigation justify-self-center">
-                    <ul class="pagination justify-content-center p-3">
-                        <li class="page-item" :class="{ 'disabled': currentPage === 1 }">
-                            <a class="page-link" href="#" @click.prevent="goToPage(currentPage - 1)">
-                              <i class="bi bi-chevron-double-left"></i> 
-                            </a>
-                        </li>
-                        <li 
-                            v-for="page in getDisplayPages()" 
-                            :key="page"
-                            class="page-item" 
-                            :class="{ 'active': page === currentPage }"
-                        >
-                            <a class="page-link" href="#" @click.prevent="goToPage(page)">{{ page }}</a>
-                        </li>
-                        <li class="page-item" :class="{ 'disabled': currentPage === totalPages() }">
-                            <a class="page-link" href="#" @click.prevent="goToPage(currentPage + 1)">
-                              <i class="bi bi-chevron-double-right"></i>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-            <!-- 化合物详情组件 -->
-            <CompoundDetail 
-                :compound="selectedCompound"
-                :show="showDetail"
-                @update:show="showDetail = $event"
+        <div class="offcanvas-body">
+          <FilterPanel 
+              :filters="filters"
+              :itemTypes="itemTypes"
+              :descriptions="descriptions"
+              :loading="loading"
+              @apply="applyFilters"
+              @reset="resetFilters"
             />
         </div>
+      </div>
+
+      <div class="col-12 col-md-9">
+        
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span class="text-muted small" v-if="!loading">
+            {{ t('browse.found').replace("%d", totalItems) }}
+          </span>
+          <button 
+             v-if="activeFilterCount > 0" 
+             class="btn btn-link btn-sm text-decoration-none text-muted d-none d-md-block"
+             @click="resetFilters"
+          >
+             <i class="bi bi-x-circle"></i> {{ t('browse.reset_filters') }}
+          </button>
+        </div>
+
+        <div v-if="loading" class="text-center py-5">
+           <div class="spinner-border text-primary" role="status"></div>
+        </div>
+
+        <div v-else-if="totalItems > 0" class="row g-3">
+          <compoundCard 
+            v-for="compound in compounds" 
+            :key="compound.ID" 
+            :compound="compound"
+            @show-detail="selectedCompound = compound; showDetail = true"
+          />
+        </div>
+
+        <div v-else class="text-center py-5 bg-white rounded shadow-sm">
+           <p class="text-muted mb-0">{{ t('browse.not_found') }}</p>
+        </div>
+
+        <nav v-if="!loading && totalPages() > 1" class="mt-5">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                    <a class="page-link rounded-circle mx-1" href="#" @click.prevent="goToPage(currentPage - 1)"><i class="bi bi-chevron-left"></i></a>
+                </li>
+                <li v-for="p in getDisplayPages()" :key="p" class="page-item" :class="{ active: p === currentPage }">
+                    <a class="page-link rounded-circle mx-1" href="#" @click.prevent="goToPage(p)">{{ p }}</a>
+                </li>
+                <li class="page-item" :class="{ disabled: currentPage === totalPages() }">
+                    <a class="page-link rounded-circle mx-1" href="#" @click.prevent="goToPage(currentPage + 1)"><i class="bi bi-chevron-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+
+      </div>
     </div>
+    
+    <CompoundDetail 
+      :compound="selectedCompound" 
+      :show="showDetail" 
+      @update:show="showDetail = $event" 
+    />
+  </div>
 </template>
+
+<style scoped>
+.custom-sticky-sidebar {
+  /* 限制最大高度，防止展开时覆盖navbar */
+  max-height: calc(100vh - 140px);
+  
+  /* 开启垂直滚动 */
+  overflow-y: auto;
+  
+  /* 美化滚动条 (Webkit browsers) */
+  scrollbar-width: thin;
+  scrollbar-color: #dee2e6 transparent;
+}
+
+/* 针对 Chrome/Safari/Edge 的滚动条样式优化 */
+.custom-sticky-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-sticky-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-sticky-sidebar::-webkit-scrollbar-thumb {
+  background-color: #dee2e6;
+  border-radius: 20px;
+}
+</style>

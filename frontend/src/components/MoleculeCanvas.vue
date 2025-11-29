@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted, nextTick } from 'vue';
 // 引入 OpenChemLib 完整版 (包含坐标生成算法)
 import OCL from 'openchemlib';
 
@@ -7,15 +7,6 @@ const props = defineProps({
   smiles: {
     type: String,
     default: ''
-  },
-  // 可选：允许外部控制尺寸，但默认自动适应容器
-  width: {
-    type: [Number, String],
-    default: 300
-  },
-  height: {
-    type: [Number, String],
-    default: 200
   }
 });
 
@@ -33,16 +24,26 @@ const renderStructure = () => {
   }
 
   try {
+    // 获取容器实际尺寸
+    const container = containerRef.value;
+    if (!container) return;
+    
+    const width = container.clientWidth || 200;
+    const height = container.clientHeight || 120;
+    
     // 1. 解析 SMILES
     const mol = OCL.Molecule.fromSmiles(props.smiles);
     
+    // 移除未知手性文字和不显示？原子
     const svg = mol.toSVG(
-      parseFloat(props.width), 
-      parseFloat(props.height), 
+      width, 
+      height, 
       null, 
       {
         strokeWidth: 0.8,
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        suppressChiralText: true,  // 移除unknown chirality文字
+        suppressCIPParity: true    // 移除手性标记
       }
     );
 
@@ -56,16 +57,15 @@ const renderStructure = () => {
 
 // 监听 SMILES 变化
 watch(() => props.smiles, () => {
-  renderStructure();
+  nextTick(() => {
+    renderStructure();
+  });
 }, { immediate: true });
 
-// 监听尺寸变化 (可选)
-watch([() => props.width, () => props.height], () => {
-  renderStructure();
-});
-
 onMounted(() => {
-  renderStructure();
+  nextTick(() => {
+    renderStructure();
+  });
 });
 </script>
 
@@ -94,11 +94,10 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   position: relative;
-  min-height: 150px; /* 保持最小高度 */
   background-color: #fff;
-  border: 1px solid #e9ecef;
   border-radius: 4px;
   overflow: hidden;
+  aspect-ratio: 7/3; /* 保持宽高比 7:3 */
 }
 
 .svg-container {
@@ -123,6 +122,8 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   color: #6c757d;
+  width: 100%;
+  height: 100%;
 }
 
 .no-structure-message i {

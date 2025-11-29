@@ -17,7 +17,15 @@
         "not_found": "未找到相关化合物记录",
         "found": "已加载 %d 条化合物记录",
         "compound_details": "化合物详情",
-        "select_compound": "请选择一个化合物查看详情"
+        "select_compound": "请选择一个化合物查看详情",
+        "molecular_weight_range": "分子量范围",
+        "description_category": "描述分类",
+        "apply_filters": "应用筛选",
+        "reset_filters": "重置筛选",
+        "current_filters": "当前筛选条件",
+        "min_weight": "最小",
+        "max_weight": "最大",
+        "multiple_select_hint": "按住Ctrl键可多选"
     },
     "details": {
         "basic_info": "基本信息",
@@ -96,6 +104,13 @@
         "stats1_label": "化合物总数",
         "stats2_label": "生物活性化合物",
         "stats3_label": "海洋来源",
-        "stats4_label": "研究文献"
+        "stats4_label": "研究文献",
+        "data_statistics": "数据统计",
+        "compounds": "化合物",
+        "organisms": "物种",
+        "bioactivities": "活性数据",
+        "nmr": "核磁",
+        "ms": "质谱",
+        "data_info": "实时数据库统计信息"
     }
 }
