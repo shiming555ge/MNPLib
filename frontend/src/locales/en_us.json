@@ -1,7 +1,7 @@
 {
     "navbar":{
-        "brand_for_short": "MCBW",
-        "brand_for_full": "Marine Compound Browser Website",
+        "brand_for_short": "MNPLib",
+        "brand_for_full": "Marine Natural Product Library",
         "home": "Home",
         "browse": "Browse",
         "query": "Query",
@@ -77,6 +77,8 @@
         "piperazine": "Piperazine"
     },
     "home": {
+        "welcome_title": "Welcome to MNPLib",
+        "welcome_description": "MNPLib is a comprehensive database of deep-sea natural products and their derivatives, funded by the National Key Research and Development Program of China, which provides integrated information on chemical structures, sources, bioactivities, NMR, and MS data.",
         "title": "Marine Compound Browser Website",
         "description": "Explore a comprehensive database of marine bioactive compounds with support for chemical structure queries, similarity searches, and substructure matching.",
         "browse_compounds": "Browse Compounds",

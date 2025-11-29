@@ -1,15 +1,88 @@
 .navbar-bg-primary{
-    background-color: $blue-700;
+    background: linear-gradient(135deg, $blue-800 0%, $blue-500 100%);
 }
 .navbar-bg-secondary{
-    background-color: $blue-300;
+    background: linear-gradient(135deg, $blue-600 0%, $blue-500 100%);
     opacity: 0.95;
 }
+
+/* 导航栏变窄样式 */
+.navbar {
+    min-height: 70px;
+    padding: 0.5rem 0;
+}
+
+.navbar-brand {
+    padding: 0.5rem 1rem !important;
+}
+
+.navbar-brand .fs-1 {
+    font-size: 1.8rem !important;
+    line-height: 1.2;
+}
+
+.navbar-brand .fs-6 {
+    font-size: 0.9rem !important;
+    opacity: 0.7;
+    line-height: 1.2;
+}
+
 .nav-link{
     color: white;
-    opacity: 0.8;
+    opacity: 1;
+    padding: 0.75rem 1rem !important;
+    margin: 0 0.25rem;
 }
 .nav-link.active{
     color: gold;
-    opacity: 0.8;
+    opacity: 1;
+    font-weight: bold;
+}
+.nav-link:hover {
+    color: #e6e6e6;
+    opacity: 1;
+}
+
+/* 汉堡菜单按钮样式 */
+.navbar-toggler {
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    padding: 0.25rem 0.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.navbar-toggler:hover {
+    border-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.9%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    transition: all 0.3s ease;
+}
+
+/* 小屏设备下拉菜单样式 */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        background-color: #00000000;
+        border-radius: 1.5em;
+        margin-top: 0.5rem;
+    }
+    
+    .nav-link {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .nav-link:last-child {
+        border-bottom: none;
+    }
+    
+    .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
 }

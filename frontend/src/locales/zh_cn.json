@@ -1,7 +1,7 @@
 {
     "navbar":{
-        "brand_for_short": "MCBW",
-        "brand_for_full": "Marine Compound Browser Website",
+        "brand_for_short": "MNPLib",
+        "brand_for_full": "Marine Natural Product Library",
         "home": "首页",
         "browse": "浏览",
         "query": "查询",
@@ -77,6 +77,8 @@
         "piperazine": "哌嗪类"
     },
     "home": {
+        "welcome_title": "欢迎使用 MNPLib",
+        "welcome_description": "MNPLib 是一个深海天然产物及其衍生物的综合数据库，由国家重点研发计划资助，提供化学结构、来源、生物活性、NMR 和 MS 数据的集成信息。",
         "title": "海洋化合物浏览网站",
         "description": "探索海洋生物活性化合物的综合数据库，支持化学结构查询、相似度搜索和子结构匹配。",
         "browse_compounds": "浏览化合物",
