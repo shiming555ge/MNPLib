@@ -35,6 +35,9 @@ func Init(r *gin.Engine) {
 	}
 
 	if config.Config.GetBool("static") {
-		r.Static("/", "./www")
+		static := r.Group("/")
+		{
+			static.Static("/", "./www")
+		}
 	}
 }
