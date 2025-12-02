@@ -82,15 +82,29 @@ func SimilaritySearch(fp string, threshold string) (string, error) {
 
 	// 获取数据库中的所有指纹数据
 	var compounds []struct {
-		ID string `gorm:"column:ID" json:"id"`
-		Fp string `gorm:"column:Fp" json:"fp"`
+		ID     string `gorm:"column:ID" json:"id"`
+		SMILES string `gorm:"column:SMILES;type:TEXT" json:"smiles,omitempty"`
+		FP     string `gorm:"column:FP" json:"fp"`
 	}
 
 	// 使用正确的表名和字段名查询
-	result := database.GetDB().Table("data").Select("ID, Fp").Find(&compounds)
+	result := database.GetDB().Table("data").Select("ID, FP").Find(&compounds)
 	if result.Error != nil {
 		utils.LogError(result.Error)
 		return "", fmt.Errorf("数据库查询失败: %v", result.Error)
+	}
+	// 检查fp是否存在
+	for i, compound := range compounds {
+		// 初始化FP
+		if compound.FP == "" {
+			var err error
+			compound.FP, err = SmilesToFingerprint(compound.SMILES)
+			if err != nil {
+				return "", fmt.Errorf("初始化化合物(%v)FP失败： %v", compound.ID, result.Error)
+			}
+			database.GetDB().Table("data").Where("ID = ?", compound.ID).Update("FP", compound.FP)
+			compounds[i] = compound
+		}
 	}
 
 	// 准备发送给Python的数据
@@ -98,7 +112,7 @@ func SimilaritySearch(fp string, threshold string) (string, error) {
 	for i, compound := range compounds {
 		library[i] = map[string]interface{}{
 			"id": compound.ID,
-			"fp": compound.Fp,
+			"fp": compound.FP,
 		}
 	}
 
@@ -224,11 +238,11 @@ func SubstructureSearch(smartsPattern string) (string, error) {
 	// 获取数据库中的所有SMILES数据
 	var compounds []struct {
 		ID     string `gorm:"column:ID" json:"id"`
-		Smiles string `gorm:"column:Smiles" json:"smiles"`
+		SMILES string `gorm:"column:SMILES" json:"smiles"`
 	}
 
 	// 使用正确的表名和字段名查询
-	result := database.GetDB().Table("data").Select("ID, Smiles").Find(&compounds)
+	result := database.GetDB().Table("data").Select("ID, SMILES").Find(&compounds)
 	if result.Error != nil {
 		utils.LogError(result.Error)
 		return "", fmt.Errorf("数据库查询失败: %v", result.Error)
@@ -239,7 +253,7 @@ func SubstructureSearch(smartsPattern string) (string, error) {
 	for i, compound := range compounds {
 		library[i] = map[string]interface{}{
 			"id":     compound.ID,
-			"smiles": compound.Smiles,
+			"smiles": compound.SMILES,
 		}
 	}
 
@@ -277,11 +291,11 @@ func ExactMatchSearch(smiles string) (string, error) {
 	// 获取数据库中的所有SMILES数据
 	var compounds []struct {
 		ID     string `gorm:"column:ID" json:"id"`
-		Smiles string `gorm:"column:Smiles" json:"smiles"`
+		SMILES string `gorm:"column:SMILES" json:"smiles"`
 	}
 
 	// 使用正确的表名和字段名查询
-	result := database.GetDB().Table("data").Select("ID, Smiles").Find(&compounds)
+	result := database.GetDB().Table("data").Select("ID, SMILES").Find(&compounds)
 	if result.Error != nil {
 		utils.LogError(result.Error)
 		return "", fmt.Errorf("数据库查询失败: %v", result.Error)
@@ -292,7 +306,7 @@ func ExactMatchSearch(smiles string) (string, error) {
 	for i, compound := range compounds {
 		library[i] = map[string]interface{}{
 			"id":     compound.ID,
-			"smiles": compound.Smiles,
+			"smiles": compound.SMILES,
 		}
 	}
 
@@ -318,14 +332,49 @@ func ExactMatchSearch(smiles string) (string, error) {
 	return res, nil
 }
 
-// FilterCompounds 筛选化合物 - 根据ItemType、分子量范围和Description进行筛选，支持数组参数
-func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descriptions []string, limit, offset int) ([]models.Data, int64, error) {
+// FilterCompounds 筛选化合物 - 根据ItemType、分子量范围、Description和Source进行筛选，支持数组参数
+func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descriptions []string, sources []string, limit, offset int) ([]models.Data, int64, error) {
 	// 构建查询条件
 	query := database.GetDB().Table("data")
 
 	// ItemType筛选 - 支持数组
 	if len(itemTypes) > 0 {
-		query = query.Where("Item_Type IN (?)", itemTypes)
+		// 定义主要的6个类别（小写形式）
+		mainCategories := []string{"alkaloid", "peptide", "polyketide", "terpenoids", "carbazole", "indole"}
+
+		// 将前端传过来的itemTypes转换为小写
+		lowerItemTypes := make([]string, len(itemTypes))
+		hasOthers := false
+		specificTypes := []string{}
+
+		for i, itemType := range itemTypes {
+			lowerType := strings.ToLower(itemType)
+			lowerItemTypes[i] = lowerType
+
+			// 检查是否包含"others"
+			if lowerType == "others" {
+				hasOthers = true
+			} else {
+				specificTypes = append(specificTypes, lowerType)
+			}
+		}
+
+		if hasOthers {
+			// 如果包含"others"，查询除了6个主要类别之外的所有化合物
+			// 但也要包含用户选择的其他具体类别（如果有的话）
+			if len(specificTypes) > 0 {
+				// 用户既选择了"others"又选择了其他具体类别
+				// 查询：不属于6个主要类别，但属于用户选择的具体类别
+				query = query.Where("LOWER(ItemType) NOT IN (?) AND LOWER(ItemType) IN (?)", mainCategories, specificTypes)
+			} else {
+				// 用户只选择了"others"
+				// 查询：不属于6个主要类别的所有化合物
+				query = query.Where("LOWER(ItemType) NOT IN (?)", mainCategories)
+			}
+		} else {
+			// 如果不包含"others"，正常查询用户选择的类别
+			query = query.Where("LOWER(ItemType) IN (?)", lowerItemTypes)
+		}
 	}
 
 	// Description筛选 - 支持数组
@@ -336,6 +385,19 @@ func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descripti
 		for i, desc := range descriptions {
 			likeConditions[i] = "Description LIKE ?"
 			likeArgs[i] = "%" + desc + "%"
+		}
+		// 使用OR连接多个LIKE条件
+		query = query.Where(strings.Join(likeConditions, " OR "), likeArgs...)
+	}
+
+	// Source筛选 - 支持数组
+	if len(sources) > 0 {
+		// 为每个source创建LIKE条件
+		likeConditions := make([]string, len(sources))
+		likeArgs := make([]interface{}, len(sources))
+		for i, source := range sources {
+			likeConditions[i] = "Source LIKE ?"
+			likeArgs[i] = "%" + source + "%"
 		}
 		// 使用OR连接多个LIKE条件
 		query = query.Where(strings.Join(likeConditions, " OR "), likeArgs...)
@@ -375,9 +437,9 @@ func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descripti
 func GetItemTypes() ([]string, error) {
 	var itemTypes []string
 	result := database.GetDB().Table("data").
-		Where("Item_Type IS NOT NULL AND Item_Type != ''").
-		Distinct("Item_Type").
-		Pluck("Item_Type", &itemTypes)
+		Where("ItemType IS NOT NULL AND ItemType != ''").
+		Distinct("ItemType").
+		Pluck("ItemType", &itemTypes)
 
 	if result.Error != nil {
 		utils.LogError(result.Error)
@@ -401,4 +463,20 @@ func GetDescriptions() ([]string, error) {
 	}
 
 	return descriptions, nil
+}
+
+// GetSources 获取所有Source分类
+func GetSources() ([]string, error) {
+	var sources []string
+	result := database.GetDB().Table("data").
+		Where("Source IS NOT NULL AND Source != ''").
+		Distinct("Source").
+		Pluck("Source", &sources)
+
+	if result.Error != nil {
+		utils.LogError(result.Error)
+		return nil, fmt.Errorf("获取Source分类失败: %v", result.Error)
+	}
+
+	return sources, nil
 }

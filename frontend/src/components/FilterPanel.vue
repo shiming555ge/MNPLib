@@ -6,28 +6,46 @@ const { t } = useI18n();
 
 const props = defineProps({
   filters: { type: Object, required: true },
-  itemTypes: { type: Array, default: () => [] },
   descriptions: { type: Array, default: () => [] },
+  sources: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['apply', 'reset']);
 
+// 固定的item_type选项
+const fixedItemTypes = ref([
+  'ALKALOID',
+  'PEPTIDE',
+  'POLYKETIDE',
+  'TERPENOIDS',
+  'CARBAZOLE',
+  'INDOLE',
+  'OTHERS'
+]);
+
 // --- 折叠/展开 逻辑 ---
 const ITEM_LIMIT = 10; // 默认显示的个数
 const showAllTypes = ref(false);
 const showAllDescs = ref(false);
+const showAllSources = ref(false);
 
 // 计算显示的 ItemTypes
 const displayedItemTypes = computed(() => {
-  if (showAllTypes.value) return props.itemTypes;
-  return props.itemTypes.slice(0, ITEM_LIMIT);
+  if (showAllTypes.value) return fixedItemTypes.value;
+  return fixedItemTypes.value.slice(0, ITEM_LIMIT);
 });
 
 // 计算显示的 Descriptions
 const displayedDescriptions = computed(() => {
   if (showAllDescs.value) return props.descriptions;
   return props.descriptions.slice(0, ITEM_LIMIT);
+});
+
+// 计算显示的 Sources
+const displayedSources = computed(() => {
+  if (showAllSources.value) return props.sources;
+  return props.sources.slice(0, ITEM_LIMIT);
 });
 
 // 切换选择
@@ -40,6 +58,7 @@ const toggleFilterItem = (array, item) => {
 const hasActiveFilters = computed(() => {
   return props.filters.item_type.length > 0 || 
          props.filters.description.length > 0 || 
+         props.filters.source?.length > 0 ||
          props.filters.min_weight || 
          props.filters.max_weight;
 });
@@ -53,7 +72,7 @@ const hasActiveFilters = computed(() => {
           <i class="bi bi-diagram-3 me-1"></i> {{ t('browse.compound_type') }}
         </label>
         <button 
-          v-if="itemTypes.length > ITEM_LIMIT"
+          v-if="fixedItemTypes.length > ITEM_LIMIT"
           class="btn btn-link btn-sm p-0 text-decoration-none"
           style="font-size: 0.8rem;"
           @click="showAllTypes = !showAllTypes"
@@ -74,8 +93,8 @@ const hasActiveFilters = computed(() => {
           {{ type }}
           <i v-if="filters.item_type.includes(type)" class="bi bi-check-lg ms-1"></i>
         </div>
-        <span v-if="!showAllTypes && itemTypes.length > ITEM_LIMIT" class="badge text-secondary bg-light border align-self-center">
-            +{{ itemTypes.length - ITEM_LIMIT }}
+        <span v-if="!showAllTypes && fixedItemTypes.length > ITEM_LIMIT" class="badge text-secondary bg-light border align-self-center">
+            +{{ fixedItemTypes.length - ITEM_LIMIT }}
         </span>
       </div>
     </div>
@@ -124,6 +143,41 @@ const hasActiveFilters = computed(() => {
         </div>
          <span v-if="!showAllDescs && descriptions.length > ITEM_LIMIT" class="badge text-secondary bg-light border align-self-center">
             +{{ descriptions.length - ITEM_LIMIT }}
+        </span>
+      </div>
+    </div>
+
+    <hr class="border-secondary opacity-10 my-4">
+
+    <div class="mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <label class="form-label fw-bold small text-uppercase text-secondary mb-0">
+          <i class="bi bi-geo-alt me-1"></i> {{ t('browse.source_category') || 'Source分类' }}
+        </label>
+        <button 
+          v-if="sources.length > ITEM_LIMIT"
+          class="btn btn-link btn-sm p-0 text-decoration-none"
+          style="font-size: 0.8rem;"
+          @click="showAllSources = !showAllSources"
+        >
+          {{ showAllSources ? t('browse.collapse') || '收起' : t('browse.expand') || '展开' }}
+          <i class="bi" :class="showAllSources ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+        </button>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2">
+        <div 
+          v-for="source in displayedSources" 
+          :key="source"
+          class="filter-chip source-chip"
+          :class="{ 'active bg-warning text-white border-warning': filters.source?.includes(source) }"
+          @click="toggleFilterItem(filters.source || (filters.source = []), source)"
+        >
+          {{ source }}
+          <i v-if="filters.source?.includes(source)" class="bi bi-check-lg ms-1"></i>
+        </div>
+         <span v-if="!showAllSources && sources.length > ITEM_LIMIT" class="badge text-secondary bg-light border align-self-center">
+            +{{ sources.length - ITEM_LIMIT }}
         </span>
       </div>
     </div>

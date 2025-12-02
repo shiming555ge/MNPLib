@@ -6,25 +6,24 @@ import (
 
 // Data 对应数据库中的 data 表
 type Data struct {
-	ID          string     `gorm:"column:ID;type:VARCHAR(10);primaryKey;not null" json:"id"`
-	Source      string     `gorm:"column:Source;type:VARCHAR(20);not null" json:"source"`
-	ItemName    *string    `gorm:"column:Item_Name;type:VARCHAR(180)" json:"item_name,omitempty"`
-	ItemType    *string    `gorm:"column:Item_Type;type:VARCHAR(50)" json:"item_type,omitempty"`
-	IUPACName   *string    `gorm:"column:IUPAC_name;type:VARCHAR(150)" json:"iupac_name,omitempty"`
-	Description *string    `gorm:"column:Description;type:VARCHAR(100)" json:"description,omitempty"`
-	CASNumber   *string    `gorm:"column:CAS_number;type:VARCHAR(30)" json:"cas_number,omitempty"`
-	ItemTag     *string    `gorm:"column:Item_Tag;type:VARCHAR(30)" json:"item_tag,omitempty"`
-	Formula     *string    `gorm:"column:Formula;type:VARCHAR(80)" json:"formula,omitempty"`
-	Structure   *string    `gorm:"column:Structure;type:TEXT" json:"structure,omitempty"`
-	Weight      *float32   `gorm:"column:Weight;type:FLOAT" json:"weight,omitempty"`
-	NMR         *string    `gorm:"column:NMR;type:VARCHAR(10)" json:"nmr,omitempty"`
-	MS1         *string    `gorm:"column:MS1;type:VARCHAR(10)" json:"ms1,omitempty"`
-	MS2         *string    `gorm:"column:MS2;type:VARCHAR(10)" json:"ms2,omitempty"`
-	Bioactivity *string    `gorm:"column:Bioactivity;type:VARCHAR(10)" json:"bioactivity,omitempty"`
-	Smiles      string     `gorm:"column:Smiles;type:TEXT;not null" json:"smiles"`
-	Fp          string     `gorm:"column:Fp;type:VARCHAR(50);not null" json:"fp"`
-	CreatedAt   *time.Time `gorm:"column:Created_At" json:"created_at,omitempty"`
-	UpdatedAt   *time.Time `gorm:"column:Updated_At" json:"updated_at,omitempty"`
+	ID           string     `gorm:"column:ID;type:VARCHAR(12);primaryKey;not null" json:"id"`
+	Source       *string    `gorm:"column:Source;type:VARCHAR(255)" json:"source,omitempty"`
+	ItemName     *string    `gorm:"column:ItemName;type:TEXT" json:"item_name,omitempty"`
+	ItemType     *string    `gorm:"column:ItemType;type:TEXT" json:"item_type,omitempty"`
+	Formula      *string    `gorm:"column:Formula;type:VARCHAR(128)" json:"formula,omitempty"`
+	SMILES       *string    `gorm:"column:SMILES;type:TEXT" json:"smiles,omitempty"`
+	Description  *string    `gorm:"column:Description;type:ENUM('KNOWN COMPOUND','NEW NATURAL PRODUCT','NEW ANALOGS')" json:"description,omitempty"`
+	CASNumber    *string    `gorm:"column:CAS_number;type:VARCHAR(100)" json:"cas_number,omitempty"`
+	ItemTag      *string    `gorm:"column:ItemTag;type:VARCHAR(255)" json:"item_tag,omitempty"`
+	Structure    *string    `gorm:"column:Structure;type:TEXT" json:"structure,omitempty"`
+	MS1          *float64   `gorm:"column:MS1;type:DOUBLE" json:"ms1,omitempty"`
+	MS2          *string    `gorm:"column:MS2;type:VARCHAR(512)" json:"ms2,omitempty"`
+	Bioactivity  *string    `gorm:"column:Bioactivity;type:VARCHAR(512)" json:"bioactivity,omitempty"`
+	NMR_13C_data *string    `gorm:"column:NMR_13C_data;type:TEXT" json:"nmr_13c_data,omitempty"`
+	Weight       *float32   `gorm:"column:Weight;type:FLOAT" json:"weight,omitempty"`
+	FP           *string    `gorm:"column:FP;type:VARCHAR(127)" json:"fp,omitempty"`
+	CreatedAt    *time.Time `gorm:"column:Created_At" json:"created_at,omitempty"`
+	UpdatedAt    *time.Time `gorm:"column:Updated_At" json:"updated_at,omitempty"`
 }
 
 // TableName 指定表名

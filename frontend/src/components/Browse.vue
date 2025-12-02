@@ -21,6 +21,7 @@ const showDetail = ref(false);
 const filters = ref({
   item_type: [],     // 数组
   description: [],   // 数组
+  source: [],        // 数组，新增source筛选
   min_weight: '',
   max_weight: ''
 });
@@ -28,22 +29,24 @@ const filters = ref({
 // 分类数据
 const itemTypes = ref([]);
 const descriptions = ref([]);
+const sources = ref([]); // 新增sources数据
 
-// 1. 获取分类选项
+// 1. 获取分类选项（获取descriptions和sources，item_type使用固定值）
 const fetchOptions = async () => {
   try {
-    const [typesRes, descRes] = await Promise.all([
-      fetch('/api/data/item-types'),
-      fetch('/api/data/descriptions')
+    const [descRes, sourcesRes] = await Promise.all([
+      fetch('/api/data/descriptions'),
+      fetch('/api/data/sources')
     ]);
     
-    if (typesRes.ok) {
-      const result = await typesRes.json();
-      itemTypes.value = result.data || result; // 兼容直接返回数组的情况
-    }
     if (descRes.ok) {
       const result = await descRes.json();
       descriptions.value = result.data || result;
+    }
+    
+    if (sourcesRes.ok) {
+      const result = await sourcesRes.json();
+      sources.value = result.data || result;
     }
   } catch (error) {
     console.error('Fetch options error:', error);
@@ -70,6 +73,11 @@ const fetchCompounds = async (page = 1) => {
       filters.value.description.forEach(val => params.append('description', val));
     }
     
+    // 新增source筛选参数
+    if (filters.value.source && filters.value.source.length) {
+      filters.value.source.forEach(val => params.append('source', val));
+    }
+    
     // 普通参数
     if (filters.value.min_weight) params.append('min_weight', filters.value.min_weight);
     if (filters.value.max_weight) params.append('max_weight', filters.value.max_weight);
@@ -81,15 +89,17 @@ const fetchCompounds = async (page = 1) => {
     
     const result = await response.json();
     
-    // 兼容 API 响应结构
-    const dataNode = result.data.data ? result.data : result; 
-    compounds.value = dataNode.data || [];
-    totalItems.value = dataNode.total || 0;
+    // 新的API响应结构：直接返回数组或包含data字段的对象
+    // 预期返回格式: { data: [{id, item_name, smiles, cas_number}, ...], total: number }
+    const dataNode = result.data || result;
+    compounds.value = Array.isArray(dataNode) ? dataNode : (dataNode.data || []);
+    totalItems.value = result.total || dataNode.total || compounds.value.length;
     currentPage.value = page;
 
   } catch (error) {
     console.error('Fetch error:', error);
     compounds.value = [];
+    totalItems.value = 0;
   } finally {
     loading.value = false;
   }
@@ -111,6 +121,7 @@ const resetFilters = () => {
   filters.value = {
     item_type: [],
     description: [],
+    source: [],
     min_weight: '',
     max_weight: ''
   };
@@ -120,7 +131,7 @@ const resetFilters = () => {
 
 // 统计当前筛选数量 (用于移动端按钮上的红点)
 const activeFilterCount = computed(() => {
-  let count = filters.value.item_type.length + filters.value.description.length;
+  let count = filters.value.item_type.length + filters.value.description.length + (filters.value.source?.length || 0);
   if (filters.value.min_weight || filters.value.max_weight) count++;
   return count;
 });
@@ -188,8 +199,8 @@ onMounted(() => {
           <div class="card-body pt-0">
             <FilterPanel 
               :filters="filters"
-              :itemTypes="itemTypes"
               :descriptions="descriptions"
+              :sources="sources"
               :loading="loading"
               @apply="applyFilters"
               @reset="resetFilters"
@@ -208,8 +219,8 @@ onMounted(() => {
         <div class="offcanvas-body">
           <FilterPanel 
               :filters="filters"
-              :itemTypes="itemTypes"
               :descriptions="descriptions"
+              :sources="sources"
               :loading="loading"
               @apply="applyFilters"
               @reset="resetFilters"

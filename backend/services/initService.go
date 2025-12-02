@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-// InitializeCompoundData 初始化化合物数据，计算缺失的Fp、Structure和Weight
+// InitializeCompoundData 初始化化合物数据，计算缺失的FP、Structure和Weight
 func InitializeCompoundData() error {
 	// 检查Python进程是否已初始化
 	if p == nil {
@@ -31,28 +31,37 @@ func InitializeCompoundData() error {
 	// 统计需要计算的数据
 	compoundsToUpdate := []struct {
 		ID            string
-		Smiles        string
-		NeedFp        bool
+		SMILES        string
+		NeedFP        bool
 		NeedStructure bool
 		NeedWeight    bool
 	}{}
 
 	for _, compound := range compounds {
-		needFp := compound.Fp == ""
+		needFP := compound.FP == nil || *compound.FP == ""
 		needStructure := compound.Structure == nil || *compound.Structure == ""
 		needWeight := compound.Weight == nil
 
-		if needFp || needStructure || needWeight {
+		// 检查SMILES是否存在
+		var smiles string
+		if compound.SMILES != nil {
+			smiles = *compound.SMILES
+		} else {
+			// 如果没有SMILES，跳过这个化合物
+			continue
+		}
+
+		if needFP || needStructure || needWeight {
 			compoundsToUpdate = append(compoundsToUpdate, struct {
 				ID            string
-				Smiles        string
-				NeedFp        bool
+				SMILES        string
+				NeedFP        bool
 				NeedStructure bool
 				NeedWeight    bool
 			}{
 				ID:            compound.ID,
-				Smiles:        compound.Smiles,
-				NeedFp:        needFp,
+				SMILES:        smiles,
+				NeedFP:        needFP,
 				NeedStructure: needStructure,
 				NeedWeight:    needWeight,
 			})
@@ -72,21 +81,21 @@ func InitializeCompoundData() error {
 
 		updates := make(map[string]interface{})
 
-		// 计算Fp
-		if compound.NeedFp {
-			fp, err := calculateFingerprint(compound.Smiles)
+		// 计算FP
+		if compound.NeedFP {
+			fp, err := calculateFingerprint(compound.SMILES)
 			if err != nil {
 				utils.LogError(err)
-				utils.Log(fmt.Sprintf("计算Fp失败: ID=%s", compound.ID))
+				utils.Log(fmt.Sprintf("计算FP失败: ID=%s", compound.ID))
 			} else {
-				updates["Fp"] = fp
-				utils.Log(fmt.Sprintf("成功计算Fp: ID=%s", compound.ID))
+				updates["FP"] = fp
+				utils.Log(fmt.Sprintf("成功计算FP: ID=%s", compound.ID))
 			}
 		}
 
 		// 计算Structure
 		if compound.NeedStructure {
-			structure, err := calculateStructure(compound.Smiles)
+			structure, err := calculateStructure(compound.SMILES)
 			if err != nil {
 				utils.LogError(err)
 				utils.Log(fmt.Sprintf("计算Structure失败: ID=%s", compound.ID))
@@ -98,7 +107,7 @@ func InitializeCompoundData() error {
 
 		// 计算Weight
 		if compound.NeedWeight {
-			weight, err := calculateMolecularWeight(compound.Smiles)
+			weight, err := calculateMolecularWeight(compound.SMILES)
 			if err != nil {
 				utils.LogError(err)
 				utils.Log(fmt.Sprintf("计算Weight失败: ID=%s", compound.ID))

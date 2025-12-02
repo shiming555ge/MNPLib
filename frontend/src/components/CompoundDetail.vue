@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MoleculeViewer from './MoleculeViewer.vue'
 
@@ -19,6 +19,29 @@ const props = defineProps({
 const emit = defineEmits(['update:show'])
 
 const offcanvasElement = ref(null)
+const detailedData = ref(null)
+const loadingDetail = ref(false)
+const ms2Data = ref(null)
+const cnmrData = ref(null)
+const bioactivityData = ref(null)
+const loadingSpecialData = ref({
+  ms2: false,
+  cnmr: false,
+  bioactivity: false
+})
+
+// 监听compound变化，获取详细数据
+watch(() => props.compound, async (newCompound) => {
+  if (newCompound && newCompound.id) {
+    await fetchDetailedData(newCompound.id)
+    await fetchSpecialData(newCompound.id)
+  } else {
+    detailedData.value = null
+    ms2Data.value = null
+    cnmrData.value = null
+    bioactivityData.value = null
+  }
+}, { immediate: true })
 
 // 监听show变化，控制offcanvas显示
 watch(() => props.show, (newVal) => {
@@ -36,10 +59,118 @@ watch(() => props.show, (newVal) => {
   }
 })
 
+// 获取详细数据
+const fetchDetailedData = async (id) => {
+  if (!id) return
+  
+  loadingDetail.value = true
+  try {
+    const response = await fetch(`/api/data/${id}`)
+    if (response.ok) {
+      const result = await response.json()
+      detailedData.value = result.data || result
+    } else {
+      console.error('Failed to fetch detailed data:', response.status)
+      detailedData.value = null
+    }
+  } catch (error) {
+    console.error('Error fetching detailed data:', error)
+    detailedData.value = null
+  } finally {
+    loadingDetail.value = false
+  }
+}
+
+// 获取特殊数据（MS2, C-NMR, Bioactivity）
+const fetchSpecialData = async (id) => {
+  if (!id) return
+  
+  // 获取MS2数据
+  loadingSpecialData.value.ms2 = true
+  try {
+    const response = await fetch(`/api/data/${id}/ms2`)
+    if (response.ok) {
+      const result = await response.json()
+      // 检查是否返回200400（表示无数据）
+      if (result.code !== 200400) {
+        ms2Data.value = result.data || result
+      } else {
+        ms2Data.value = null
+      }
+    } else {
+      ms2Data.value = null
+    }
+  } catch (error) {
+    console.error('Error fetching MS2 data:', error)
+    ms2Data.value = null
+  } finally {
+    loadingSpecialData.value.ms2 = false
+  }
+  
+  // 获取C-NMR数据
+  loadingSpecialData.value.cnmr = true
+  try {
+    const response = await fetch(`/api/data/${id}/cnmr`)
+    if (response.ok) {
+      const result = await response.json()
+      if (result.code !== 200400) {
+        cnmrData.value = result.data || result
+      } else {
+        cnmrData.value = null
+      }
+    } else {
+      cnmrData.value = null
+    }
+  } catch (error) {
+    console.error('Error fetching C-NMR data:', error)
+    cnmrData.value = null
+  } finally {
+    loadingSpecialData.value.cnmr = false
+  }
+  
+  // 获取Bioactivity数据
+  loadingSpecialData.value.bioactivity = true
+  try {
+    const response = await fetch(`/api/data/${id}/bioactivity`)
+    if (response.ok) {
+      const result = await response.json()
+      if (result.code !== 200400) {
+        bioactivityData.value = result.data || result
+      } else {
+        bioactivityData.value = null
+      }
+    } else {
+      bioactivityData.value = null
+    }
+  } catch (error) {
+    console.error('Error fetching Bioactivity data:', error)
+    bioactivityData.value = null
+  } finally {
+    loadingSpecialData.value.bioactivity = false
+  }
+}
+
+// 合并数据：优先使用详细数据，如果没有则使用基本数据
+const mergedData = computed(() => {
+  if (detailedData.value) {
+    return { ...props.compound, ...detailedData.value }
+  }
+  return props.compound
+})
+
 // 手动关闭方法
 const handleClose = () => {
   emit('update:show', false)
 }
+
+// 清理函数
+onUnmounted(() => {
+  if (offcanvasElement.value) {
+    offcanvasElement.value.removeEventListener('hidden.bs.offcanvas', () => {
+      emit('update:show', false)
+    })
+  }
+})
 </script>
 
 <template>
@@ -55,12 +186,20 @@ const handleClose = () => {
   >
     <div class="offcanvas-header">
       <h5 class="offcanvas-title" id="compoundDetailOffcanvasLabel">
-        {{ compound ? compound.item_name?.replace(/"/g, "") || compound.ItemName?.replace(/"/g, "") || t('browse.compound_details') : t('browse.compound_details') }}
+        {{ mergedData ? mergedData.item_name?.replace(/"/g, "") || mergedData.ItemName?.replace(/"/g, "") || t('browse.compound_details') : t('browse.compound_details') }}
       </h5>
       <button type="button" class="btn-close" @click="handleClose" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
-      <div v-if="compound" class="compound-detail">
+      <div v-if="mergedData" class="compound-detail">
+        <!-- 加载状态 -->
+        <div v-if="loadingDetail" class="text-center py-3">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+          </div>
+          <p class="text-muted mt-2">正在加载详细数据...</p>
+        </div>
+        
         <!-- 绘制分子结构 -->
         <div class="card mb-3">
           <div class="card-header bg-primary text-white">
@@ -68,7 +207,7 @@ const handleClose = () => {
           </div>
           <div class="card-body text-center">
             <MoleculeViewer 
-              :smiles="compound.smiles" 
+              :smiles="mergedData.smiles" 
               :width="300" 
               :height="200"
             />
@@ -83,17 +222,17 @@ const handleClose = () => {
           <div class="card-body">
             <div class="row">
               <div class="col-md-12">
-                <p><strong>{{ t('details.id') }}:</strong> {{ compound.id || compound.ID || 'N/A' }}</p>
-                <p><strong>{{ t('details.source') }}:</strong> {{ compound.source || compound.Source || 'N/A' }}</p>
-                <p><strong>{{ t('details.compound_name') }}:</strong> {{ compound.item_name || compound.ItemName || 'N/A' }}</p>
-                <p><strong>{{ t('details.type') }}:</strong> {{ compound.item_type || compound.ItemType || 'N/A' }}</p>
-                <p><strong>{{ t('details.iupac_name') }}:</strong> {{ compound.iupac_name || compound.IUPACName || 'N/A' }}</p>
+                <p><strong>{{ t('details.id') }}:</strong> {{ mergedData.id || mergedData.ID || 'N/A' }}</p>
+                <p><strong>{{ t('details.source') }}:</strong> {{ mergedData.source || mergedData.Source || 'N/A' }}</p>
+                <p><strong>{{ t('details.compound_name') }}:</strong> {{ mergedData.item_name || mergedData.ItemName || 'N/A' }}</p>
+                <p><strong>{{ t('details.type') }}:</strong> {{ mergedData.item_type || mergedData.ItemType || 'N/A' }}</p>
+                <p><strong>{{ t('details.iupac_name') }}:</strong> {{ mergedData.iupac_name || mergedData.IUPACName || 'N/A' }}</p>
               </div>
               <div class="col-md-12">
-                <p><strong>{{ t('details.description') }}:</strong> {{ compound.description || compound.Description || 'N/A' }}</p>
-                <p><strong>{{ t('details.cas_number') }}:</strong> {{ compound.cas_number || compound.CASNumber || 'N/A' }}</p>
-                <p><strong>{{ t('details.formula') }}:</strong> {{ compound.formula || compound.Formula || 'N/A' }}</p>
-                <p><strong>{{ t('details.smiles') }}:</strong> {{ compound.smiles || compound.Smiles || 'N/A' }}</p>
+                <p><strong>{{ t('details.description') }}:</strong> {{ mergedData.description || mergedData.Description || 'N/A' }}</p>
+                <p><strong>{{ t('details.cas_number') }}:</strong> {{ mergedData.cas_number || mergedData.CASNumber || 'N/A' }}</p>
+                <p><strong>{{ t('details.formula') }}:</strong> {{ mergedData.formula || mergedData.Formula || 'N/A' }}</p>
+                <p><strong>{{ t('details.smiles') }}:</strong> {{ mergedData.smiles || mergedData.Smiles || 'N/A' }}</p>
               </div>
             </div>
           </div>
@@ -107,11 +246,24 @@ const handleClose = () => {
           <div class="card-body">
             <div class="row">
               <div class="col-md-6">
-                <p><strong>MS1:</strong> {{ compound.ms1 || compound.MS1 || 'N/A' }}</p>
-                <p><strong>MS2:</strong> {{ compound.ms2 || compound.MS2 || 'N/A' }}</p>
+                <p><strong>MS1:</strong> {{ mergedData.ms1 || mergedData.MS1 || 'N/A' }}</p>
+                <p><strong>MS2:</strong> 
+                  <span v-if="loadingSpecialData.ms2" class="text-muted">加载中...</span>
+                  <span v-else-if="ms2Data">{{ ms2Data }}</span>
+                  <span v-else>N/A</span>
+                </p>
               </div>
               <div class="col-md-6">
-                <p><strong>{{ t('details.bioactivity') }}:</strong> {{ compound.bioactivity || compound.Bioactivity || 'N/A' }}</p>
+                <p><strong>C-NMR:</strong> 
+                  <span v-if="loadingSpecialData.cnmr" class="text-muted">加载中...</span>
+                  <span v-else-if="cnmrData">{{ cnmrData }}</span>
+                  <span v-else>N/A</span>
+                </p>
+                <p><strong>{{ t('details.bioactivity') }}:</strong> 
+                  <span v-if="loadingSpecialData.bioactivity" class="text-muted">加载中...</span>
+                  <span v-else-if="bioactivityData">{{ bioactivityData }}</span>
+                  <span v-else>{{ mergedData.bioactivity || mergedData.Bioactivity || 'N/A' }}</span>
+                </p>
               </div>
             </div>
           </div>
@@ -123,10 +275,10 @@ const handleClose = () => {
             <h6 class="card-title mb-0"><i class="bi bi-card-text"></i> {{ t('details.other_info') }}</h6>
           </div>
           <div class="card-body row">
-            <div class="col-6 p-1"><strong>{{ t('details.tag') }}:</strong> {{ compound.item_tag || compound.ItemTag || 'N/A' }}</div>
-            <div class="col-6 p-1"><strong>{{ t('details.structure') }}:</strong> {{ compound.structure || compound.Structure || 'N/A' }}</div>
-            <div class="col-6 p-1"><strong>{{ t('details.created_at') }}:</strong> {{ compound.created_at || compound.CreatedAt || 'N/A' }}</div>
-            <div class="col-6 p-1"><strong>{{ t('details.updated_at') }}:</strong> {{ compound.updated_at || compound.UpdatedAt || 'N/A' }}</div>
+            <div class="col-6 p-1"><strong>{{ t('details.tag') }}:</strong> {{ mergedData.item_tag || mergedData.ItemTag || 'N/A' }}</div>
+            <div class="col-6 p-1"><strong>{{ t('details.structure') }}:</strong> {{ mergedData.structure || mergedData.Structure || 'N/A' }}</div>
+            <div class="col-6 p-1"><strong>{{ t('details.created_at') }}:</strong> {{ mergedData.created_at || mergedData.CreatedAt || 'N/A' }}</div>
+            <div class="col-6 p-1"><strong>{{ t('details.updated_at') }}:</strong> {{ mergedData.updated_at || mergedData.UpdatedAt || 'N/A' }}</div>
           </div>
         </div>
       </div>

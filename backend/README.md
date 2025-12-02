@@ -45,19 +45,32 @@
 
 #### 筛选化合物
 - **URL**: `GET /api/data/filter`
-- **描述**: 根据ItemType、分子量范围和Description进行筛选，支持数组参数
+- **描述**: 根据ItemType、分子量范围、Description和Source进行筛选，支持数组参数
 - **参数**:
   - `limit` (可选): 返回的记录数量，默认为10，最大100
   - `offset` (可选): 从第几条记录开始，默认为0
-  - `item_type` (可选): ItemType分类数组，可传入多个值
+  - `item_type` (可选): ItemType分类数组，可传入多个值。支持以下值（不区分大小写）:
+    - `ALKALOID` - 生物碱类
+    - `PEPTIDE` - 肽类
+    - `POLYKETIDE` - 聚酮类
+    - `TERPENOIDS` - 萜类
+    - `CARBAZOLE` - 咔唑类
+    - `INDOLE` - 吲哚类
+    - `OTHERS` - 其他类别（除上述6类之外的所有化合物）
   - `min_weight` (可选): 最小分子量
   - `max_weight` (可选): 最大分子量
   - `description` (可选): Description描述数组，可传入多个值
+  - `source` (可选): Source来源数组，可传入多个值
 - **使用示例**:
-  - 单个ItemType: `/api/data/filter?item_type=分类1`
-  - 多个ItemType: `/api/data/filter?item_type=分类1&item_type=分类2&item_type=分类3`
-  - 多个Description: `/api/data/filter?description=描述1&description=描述2`
-  - 组合筛选: `/api/data/filter?item_type=分类1&item_type=分类2&description=描述1&min_weight=100&max_weight=500`
+  - 单个ItemType: `/api/data/filter?item_type=ALKALOID`
+  - 多个ItemType: `/api/data/filter?item_type=ALKALOID&item_type=PEPTIDE&item_type=POLYKETIDE`
+  - 包含OTHERS: `/api/data/filter?item_type=OTHERS` (返回除6个主要类别外的所有化合物)
+  - 组合筛选: `/api/data/filter?item_type=ALKALOID&item_type=PEPTIDE&description=描述1&source=来源1&min_weight=100&max_weight=500`
+  - 多个Source: `/api/data/filter?source=来源1&source=来源2`
+- **注意**: 
+  - `item_type`参数不区分大小写，前端可传入大写或小写
+  - 当包含`OTHERS`时，返回除6个主要类别（ALKALOID, PEPTIDE, POLYKETIDE, TERPENOIDS, CARBAZOLE, INDOLE）之外的所有化合物
+  - `description`和`source`参数支持模糊匹配（LIKE查询）
 - **响应**: 
   ```json
   {
@@ -84,6 +97,47 @@
 - **响应**: Description分类列表
   ```json
   ["描述1", "描述2", "描述3"]
+  ```
+
+#### 获取所有Source分类
+- **URL**: `GET /api/data/sources`
+- **描述**: 返回所有可用的Source分类
+- **响应**: Source分类列表
+  ```json
+  ["来源1", "来源2", "来源3"]
+  ```
+
+#### 根据ID获取完整数据（保护数据）
+- **URL**: `GET /api/data/{id}/full`
+- **描述**: 根据数据ID返回MS2、Bioactivity和NMR_13C_data等保护数据，需要JWT认证
+- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`
+- **参数**:
+  - `id` (路径参数): 数据ID
+- **响应**: 保护数据字段
+  ```json
+  {
+    "ms2": "MS2数据...",
+    "bioactivity": "活性数据...",
+    "nmr_13c_data": "核磁数据..."
+  }
+  ```
+
+### 认证相关 API
+
+#### 用户登录
+- **URL**: `POST /api/auth/login`
+- **描述**: 使用passkey进行登录，返回JWT token
+- **请求体**:
+  ```json
+  {
+    "passkey": "your_passkey"
+  }
+  ```
+- **响应**: 
+  ```json
+  {
+    "token": "jwt_token_here"
+  }
   ```
 
 ### RDKit 化学计算 API

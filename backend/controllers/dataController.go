@@ -132,24 +132,25 @@ func GetDataStatistics(c *gin.Context) {
 	// 获取总化合物数量（总记录数）
 	db.Model(&models.Data{}).Count(&stats.TotalCompounds)
 
-	// 获取物种数量（固定值，这里假设是ItemType不为空的记录数）
-	db.Model(&models.Data{}).Where("Item_Type IS NOT NULL AND Item_Type != ''").Count(&stats.TotalSpecies)
+	// // 获取物种数量（固定值，这里假设是ItemType不为空的记录数）
+	// db.Model(&models.Data{}).Where("ItemType IS NOT NULL AND ItemType != ''").Count(&stats.TotalSpecies)
+	stats.TotalSpecies = 500
 
 	// 获取活性数据量（Bioactivity不为空的数量）
 	db.Model(&models.Data{}).Where("Bioactivity IS NOT NULL AND Bioactivity != ''").Count(&stats.BioactivityData)
 
 	// 获取质谱数据量（MS1或MS2不为空的数量）
-	db.Model(&models.Data{}).Where("MS1 IS NOT NULL AND MS1 != '' OR MS2 IS NOT NULL AND MS2 != ''").Count(&stats.MSData)
+	db.Model(&models.Data{}).Where("MS1 IS NOT NULL OR MS2 IS NOT NULL AND MS2 != ''").Count(&stats.MSData)
 
-	// 获取核磁数据量（NMR不为空的数量）
-	db.Model(&models.Data{}).Where("NMR IS NOT NULL AND NMR != ''").Count(&stats.NMRData)
+	// 获取核磁数据量（NMR_13C_data不为空的数量）
+	db.Model(&models.Data{}).Where("NMR_13C_data IS NOT NULL AND NMR_13C_data != ''").Count(&stats.NMRData)
 
 	utils.JsonSuccessResponse(c, stats)
 }
 
 // FilterCompounds 筛选化合物
 // @Summary 筛选化合物
-// @Description 根据ItemType、分子量范围和Description进行筛选，支持数组参数
+// @Description 根据ItemType、分子量范围、Description和Source进行筛选，支持数组参数
 // @Tags data
 // @Accept json
 // @Produce json
@@ -159,6 +160,7 @@ func GetDataStatistics(c *gin.Context) {
 // @Param min_weight query number false "最小分子量"
 // @Param max_weight query number false "最大分子量"
 // @Param description query []string false "Description描述数组" collectionFormat(multi)
+// @Param source query []string false "Source来源数组" collectionFormat(multi)
 // @Success 200 {object} utils.JSONResponse{data=[]models.Data}
 // @Failure 500 {object} utils.JSONResponse
 // @Router /api/data/filter [get]
@@ -170,6 +172,7 @@ func FilterCompounds(c *gin.Context) {
 	minWeightStr := c.Query("min_weight")
 	maxWeightStr := c.Query("max_weight")
 	descriptions := c.QueryArray("description")
+	sources := c.QueryArray("source")
 
 	// 转换参数为整数
 	limit, err := strconv.Atoi(limitStr)
@@ -209,7 +212,7 @@ func FilterCompounds(c *gin.Context) {
 	}
 
 	// 调用筛选服务，传入分页参数和数组参数
-	compounds, totalCount, err := services.FilterCompounds(itemTypes, minWeight, maxWeight, descriptions, limit, offset)
+	compounds, totalCount, err := services.FilterCompounds(itemTypes, minWeight, maxWeight, descriptions, sources, limit, offset)
 	if err != nil {
 		utils.JsonErrorResponse(c, 200500, "筛选化合物失败")
 		return
@@ -263,4 +266,70 @@ func GetDescriptions(c *gin.Context) {
 	}
 
 	utils.JsonSuccessResponse(c, descriptions)
+}
+
+// GetDataByIDFull 根据ID获取单条数据记录（保护数据）
+// @Summary 根据ID获取数据（保护数据）
+// @Description 根据数据ID返回MS2、Bioactivity和NMR_13C_data等保护数据
+// @Tags data
+// @Accept json
+// @Produce json
+// @Param id path string true "数据ID"
+// @Success 200 {object} utils.JSONResponse{data=map[string]interface{}}
+// @Failure 400 {object} utils.JSONResponse
+// @Failure 404 {object} utils.JSONResponse
+// @Failure 500 {object} utils.JSONResponse
+// @Router /api/data/{id}/full [get]
+func GetDataByIDFull(c *gin.Context) {
+	// 获取路径参数
+	id := c.Param("id")
+	if id == "" {
+		utils.JsonErrorResponse(c, 200400, "参数id不能为空")
+		return
+	}
+
+	// 定义只包含保护字段的结构
+	type ProtectedData struct {
+		MS2          *string `json:"ms2,omitempty"`
+		Bioactivity  *string `json:"bioactivity,omitempty"`
+		NMR_13C_data *string `json:"nmr_13c_data,omitempty"`
+	}
+
+	var data ProtectedData
+	db := database.GetDB()
+
+	// 查询数据，只选择需要的字段
+	result := db.Table("data").
+		Select("MS2, Bioactivity, NMR_13C_data").
+		Where("ID = ?", id).
+		First(&data)
+	if result.Error != nil {
+		if result.Error.Error() == "record not found" {
+			utils.JsonErrorResponse(c, 200404, "数据不存在")
+		} else {
+			utils.JsonErrorResponse(c, 200500, "查询数据失败")
+		}
+		return
+	}
+
+	utils.JsonSuccessResponse(c, data)
+}
+
+// GetSources 获取所有Source分类
+// @Summary 获取Source分类
+// @Description 返回所有可用的Source分类
+// @Tags data
+// @Accept json
+// @Produce json
+// @Success 200 {object} utils.JSONResponse{data=[]string}
+// @Failure 500 {object} utils.JSONResponse
+// @Router /api/data/sources [get]
+func GetSources(c *gin.Context) {
+	sources, err := services.GetSources()
+	if err != nil {
+		utils.JsonErrorResponse(c, 200500, "获取Source分类失败")
+		return
+	}
+
+	utils.JsonSuccessResponse(c, sources)
 }

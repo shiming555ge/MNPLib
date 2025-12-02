@@ -73,8 +73,12 @@ func NewPythonProcess(pythonPath string, pythonFile string) (*PythonProcess, err
 	go func() {
 		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
+			line := scanner.Text()
+			// // 输出原始Python进程输出到日志
+			// Log("RDKit Python输出: " + line)
+
 			var resp map[string]string
-			json.Unmarshal(scanner.Bytes(), &resp)
+			json.Unmarshal([]byte(line), &resp)
 
 			// 找到对应的 request channel
 			if ch, ok := p.pending.Load(resp["id"]); ok {

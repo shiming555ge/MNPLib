@@ -35,11 +35,31 @@ const getKetcher = () => {
 const getSmilesFromKetcher = async () => {
   try {
     const ketcher = getKetcher()
-    if (ketcher) {
-      const smiles = await ketcher.getSmiles()
-      currentSmiles.value = smiles
-      return smiles
+    if (!ketcher) {
+      console.error('Ketcher实例未找到')
+      errorMessage.value = t('query.ketcher_not_ready')
+      return null
     }
+    
+    const smiles = await ketcher.getSmiles()
+    console.log('从Ketcher获取的SMILES:', smiles)
+    
+    // 验证SMILES是否有效
+    if (!smiles || smiles.trim() === '') {
+      console.error('获取的SMILES为空')
+      errorMessage.value = t('query.empty_structure')
+      return null
+    }
+    
+    // 检查是否为有效的SMILES格式（简单检查）
+    if (typeof smiles !== 'string' || smiles.length < 2) {
+      console.error('SMILES格式无效:', smiles)
+      errorMessage.value = t('query.invalid_structure')
+      return null
+    }
+    
+    currentSmiles.value = smiles
+    return smiles
   } catch (error) {
     console.error('获取SMILES失败:', error)
     errorMessage.value = t('query.get_structure_failed')
@@ -100,8 +120,25 @@ const handleSearch = async () => {
         // 相似度搜索
         // 先获取指纹，然后进行相似度搜索
         const fpResponse = await fetch(`/api/rdkit/smiles-to-fingerprint?smiles=${encodeURIComponent(smiles)}`)
+        
+        if (!fpResponse.ok) {
+          throw new Error(`指纹生成失败: ${fpResponse.status}`)
+        }
+        
         const fpData = await fpResponse.json()
-        response = await fetch(`/api/rdkit/similarity?qfp=${encodeURIComponent(fpData.fingerprint)}&threshold=0.5`)
+        
+        // 检查API响应格式
+        if (!fpData) {
+          console.error('指纹API响应数据:', fpData)
+          throw new Error('指纹生成失败: 响应中未找到data字段')
+        }
+        
+        // 确保fingerprint不是undefined或null
+        if (!fpData) {
+          throw new Error('指纹生成失败: 指纹为空')
+        }
+        
+        response = await fetch(`/api/rdkit/similarity?qfp=${encodeURIComponent(fpData)}&threshold=0.5`)
         break
     }
 
