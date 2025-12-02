@@ -333,7 +333,7 @@ func ExactMatchSearch(smiles string) (string, error) {
 }
 
 // FilterCompounds 筛选化合物 - 根据ItemType、分子量范围、Description和Source进行筛选，支持数组参数
-func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descriptions []string, sources []string, limit, offset int) ([]models.Data, int64, error) {
+func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descriptions []string, sources []string, limit, offset int) ([]models.PublicData, int64, error) {
 	// 构建查询条件
 	query := database.GetDB().Table("data")
 
@@ -423,7 +423,7 @@ func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descripti
 	}
 
 	// 应用分页并获取数据
-	var compounds []models.Data
+	var compounds []models.PublicData
 	result = query.Offset(offset).Limit(limit).Find(&compounds)
 	if result.Error != nil {
 		utils.LogError(result.Error)

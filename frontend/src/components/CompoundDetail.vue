@@ -85,50 +85,7 @@ const fetchDetailedData = async (id) => {
 const fetchSpecialData = async (id) => {
   if (!id) return
   
-  // 获取MS2数据
-  loadingSpecialData.value.ms2 = true
-  try {
-    const response = await fetch(`/api/data/${id}/ms2`)
-    if (response.ok) {
-      const result = await response.json()
-      // 检查是否返回200400（表示无数据）
-      if (result.code !== 200400) {
-        ms2Data.value = result.data || result
-      } else {
-        ms2Data.value = null
-      }
-    } else {
-      ms2Data.value = null
-    }
-  } catch (error) {
-    console.error('Error fetching MS2 data:', error)
-    ms2Data.value = null
-  } finally {
-    loadingSpecialData.value.ms2 = false
-  }
-  
-  // 获取C-NMR数据
-  loadingSpecialData.value.cnmr = true
-  try {
-    const response = await fetch(`/api/data/${id}/cnmr`)
-    if (response.ok) {
-      const result = await response.json()
-      if (result.code !== 200400) {
-        cnmrData.value = result.data || result
-      } else {
-        cnmrData.value = null
-      }
-    } else {
-      cnmrData.value = null
-    }
-  } catch (error) {
-    console.error('Error fetching C-NMR data:', error)
-    cnmrData.value = null
-  } finally {
-    loadingSpecialData.value.cnmr = false
-  }
-  
-  // 获取Bioactivity数据
+  // 获取受保护的数据
   loadingSpecialData.value.bioactivity = true
   try {
     const response = await fetch(`/api/data/${id}/bioactivity`)

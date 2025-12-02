@@ -288,14 +288,7 @@ func GetDataByIDFull(c *gin.Context) {
 		return
 	}
 
-	// 定义只包含保护字段的结构
-	type ProtectedData struct {
-		MS2          *string `json:"ms2,omitempty"`
-		Bioactivity  *string `json:"bioactivity,omitempty"`
-		NMR_13C_data *string `json:"nmr_13c_data,omitempty"`
-	}
-
-	var data ProtectedData
+	var data models.ProtectedData
 	db := database.GetDB()
 
 	// 查询数据，只选择需要的字段
@@ -332,4 +325,45 @@ func GetSources(c *gin.Context) {
 	}
 
 	utils.JsonSuccessResponse(c, sources)
+}
+
+// GetStructure 获取指定id的structure数据
+// @Summary 获取指定id的structure数据
+// @Description 获取指定id的structure数据
+// @Tags data
+// @Accept json
+// @Produce json
+// @Param id string
+// @Success 200 {object} utils.JSONResponse{data=string}
+// @Failure 500 {object} utils.JSONResponse
+// @Router /api/data/sources [get]
+func GetStructure(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		utils.JsonErrorResponse(c, 200400, "参数id不能为空")
+		return
+	}
+	// 定义只包含Structure的结构
+	type structure struct {
+		Structure *string `gorm:"column:Structure;type:TEXT" json:"structure,omitempty"`
+	}
+
+	var data structure
+	db := database.GetDB()
+
+	// 查询数据，只选择需要的字段
+	result := db.Table("data").
+		Select("Structure").
+		Where("ID = ?", id).
+		First(&data)
+	if result.Error != nil {
+		if result.Error.Error() == "record not found" {
+			utils.JsonErrorResponse(c, 200404, "数据不存在")
+		} else {
+			utils.JsonErrorResponse(c, 200500, "查询数据失败")
+		}
+		return
+	}
+
+	utils.JsonSuccessResponse(c, data)
 }
