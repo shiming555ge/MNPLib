@@ -187,6 +187,9 @@ import { ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Modal } from 'bootstrap';
 import { useAuth } from '../composables/useAuth';
+import { useRouter } from 'vue-router'
+
+const 
 
 const { t } = useI18n();
 const { getAuthHeader } = useAuth();
@@ -259,6 +262,7 @@ const fetchPasskeys = async () => {
   } catch (err) {
     console.error('获取passkey失败:', err);
     error.value = t('superadmin.network_error');
+    
   } finally {
     loading.value = false;
   }
@@ -295,6 +299,8 @@ const createPasskey = async () => {
       hideModal();
       resetForm();
       alert(t('superadmin.create_success'));
+      // 刷新数据以确保获取最新状态
+      fetchPasskeys();
     } else {
       const errorData = await response.json().catch(() => ({}));
       alert(errorData.message || t('superadmin.create_failed'));
@@ -336,6 +342,8 @@ const updatePasskey = async () => {
       hideModal();
       resetForm();
       alert(t('superadmin.update_success'));
+      // 刷新数据以确保获取最新状态
+      fetchPasskeys();
     } else {
       const errorData = await response.json().catch(() => ({}));
       alert(errorData.message || t('superadmin.update_failed'));
@@ -368,6 +376,8 @@ const deletePasskey = async (passkey) => {
     if (response.ok) {
       passkeys.value = passkeys.value.filter(p => p.passkey !== passkey.passkey);
       alert(t('superadmin.delete_success'));
+      // 刷新数据以确保获取最新状态
+      fetchPasskeys();
     } else {
       const errorData = await response.json().catch(() => ({}));
       alert(errorData.message || t('superadmin.delete_failed'));
@@ -398,6 +408,8 @@ const togglePasskeyStatus = async (passkey) => {
         passkeys.value[index] = data;
       }
       alert(t('superadmin.toggle_success'));
+      // 刷新数据以确保获取最新状态
+      fetchPasskeys();
     } else {
       const errorData = await response.json().catch(() => ({}));
       alert(errorData.message || t('superadmin.toggle_failed'));

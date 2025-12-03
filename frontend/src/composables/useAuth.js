@@ -1,4 +1,8 @@
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+// 创建router
+const router = useRouter()
 
 // 创建全局认证状态
 const authToken = ref(localStorage.getItem('authToken') || '')
@@ -25,6 +29,7 @@ const logout = () => {
   localStorage.removeItem('userInfo')
   // 触发自定义事件，通知其他组件
   window.dispatchEvent(new CustomEvent('auth-changed', { detail: { isAuthenticated: false, userInfo: null } }))
+  router.push({name: "home"})
 }
 
 // 获取认证头
