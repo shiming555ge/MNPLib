@@ -54,7 +54,7 @@ func Login(c *gin.Context) {
 	var passkey models.Passkey
 	db := database.GetDB()
 
-	result := db.Where("Passkey = ? AND Is_Active = ?", req.Passkey, true).First(&passkey)
+	result := db.Table("passkeys").Where("Passkey = ? AND Is_Active = ?", req.Passkey, true).First(&passkey)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			utils.JsonErrorResponse(c, 200401, "无效的passkey或已禁用")

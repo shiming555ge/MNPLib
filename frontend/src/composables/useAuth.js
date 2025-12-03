@@ -29,7 +29,6 @@ const logout = () => {
   localStorage.removeItem('userInfo')
   // 触发自定义事件，通知其他组件
   window.dispatchEvent(new CustomEvent('auth-changed', { detail: { isAuthenticated: false, userInfo: null } }))
-  router.push({name: "home"})
 }
 
 // 获取认证头
@@ -68,6 +67,47 @@ const verifyPasskeyModifiable = async () => {
   }
 }
 
+// 验证token是否有效
+const verifyToken = async () => {
+  try {
+    // 如果没有token，直接返回false
+    if (!authToken.value) {
+      return false;
+    }
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      ...getAuthHeader()
+    };
+    
+    const response = await fetch('/api/auth/verify', {
+      headers
+    });
+    
+    // 如果token无效，自动清理
+    if (!response.ok && response.status === 401) {
+      console.warn('Token已过期，自动登出');
+      logout();
+    }
+    
+    return response.ok;
+  } catch (err) {
+    console.error('验证token失败:', err);
+    return false;
+  }
+}
+
+// 初始化时验证token（如果存在）
+const initAuthValidation = async () => {
+  if (authToken.value) {
+    console.log('初始化验证token...');
+    await verifyToken();
+  }
+}
+
+// 立即执行初始化验证
+initAuthValidation();
+
 // 可组合函数
 export function useAuth() {
   return {
@@ -79,7 +119,8 @@ export function useAuth() {
     logout,
     getAuthHeader,
     getUserInfo,
-    verifyPasskeyModifiable
+    verifyPasskeyModifiable,
+    verifyToken
   }
 }
 
@@ -93,5 +134,6 @@ export const auth = {
   logout,
   getAuthHeader,
   getUserInfo,
-  verifyPasskeyModifiable
+  verifyPasskeyModifiable,
+  verifyToken
 }

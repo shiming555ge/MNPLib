@@ -72,28 +72,6 @@
           </div>
         </div>
 
-        <!-- 技术栈 -->
-        <div class="card border-0 shadow-sm mb-5">
-          <div class="card-header bg-white border-0 py-3">
-            <h3 class="h5 mb-0 text-primary">
-              <i class="bi bi-gear me-2"></i>{{ t('about.tech_stack_title') }}
-            </h3>
-          </div>
-          <div class="card-body p-4">
-            <div class="row g-3">
-              <div class="col-6 col-md-4 col-lg-3" v-for="tech in techStack" :key="tech.name">
-                <div class="d-flex flex-column align-items-center p-3 border rounded bg-white">
-                  <div class="mb-2" :style="{ color: tech.color, fontSize: '2rem' }">
-                    <i :class="tech.icon"></i>
-                  </div>
-                  <span class="fw-medium text-center">{{ tech.name }}</span>
-                  <small class="text-muted text-center">{{ tech.description }}</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- 团队信息 -->
         <div class="card border-0 shadow-sm">
           <div class="card-header bg-white border-0 py-3">
@@ -128,10 +106,10 @@
           <h4 class="h5 text-primary mb-3">{{ t('about.contact_title') }}</h4>
           <p class="text-muted mb-4">{{ t('about.contact_description') }}</p>
           <div class="d-flex justify-content-center gap-3">
-            <a href="mailto:contact@mnplib.org" class="btn btn-outline-primary">
+            <a href="" class="btn btn-outline-primary">
               <i class="bi bi-envelope me-2"></i>{{ t('about.contact_email') }}
             </a>
-            <a href="https://github.com/mnplib" target="_blank" class="btn btn-outline-dark">
+            <a href="" target="_blank" class="btn btn-outline-dark">
               <i class="bi bi-github me-2"></i>{{ t('about.contact_github') }}
             </a>
           </div>

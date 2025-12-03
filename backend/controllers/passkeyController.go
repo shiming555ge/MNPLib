@@ -29,7 +29,7 @@ type PasskeyResponse struct {
 
 // GetAllPasskeys 获取所有 passkey
 // @Summary 获取所有 passkey
-// @Description 获取所有 passkey 列表，需要管理员权限。注意：不会返回当前登录用户自己的 passkey
+// @Description 获取所有 passkey 列表，需要管理员权限。注意：不会返回超级管理员的passkey
 // @Tags passkey
 // @Security BearerAuth
 // @Produce json
@@ -38,19 +38,11 @@ type PasskeyResponse struct {
 // @Failure 500 {object} utils.JSONResponse
 // @Router /api/passkeys [get]
 func GetAllPasskeys(c *gin.Context) {
-	// 获取当前登录用户的 passkey
-	currentPasskey, exists := c.Get("passkey")
-	if !exists {
-		utils.JsonErrorResponse(c, 200401, "未获取到用户信息")
-		return
-	}
-	currentPasskeyStr, _ := currentPasskey.(string)
-
 	var passkeys []models.Passkey
 	db := database.GetDB()
 
-	// 查询所有 passkey，排除当前用户的 passkey
-	result := db.Where("Passkey != ?", currentPasskeyStr).Order("Created_At DESC").Find(&passkeys)
+	// 查询所有 passkey，排除超级管理员
+	result := db.Table("passkeys").Where("Extends != ''").Order("Created_At DESC").Find(&passkeys)
 	if result.Error != nil {
 		utils.JsonErrorResponse(c, 200500, "数据库查询失败")
 		return
@@ -117,7 +109,7 @@ func CreatePasskey(c *gin.Context) {
 	}
 
 	db := database.GetDB()
-	result := db.Create(&passkey)
+	result := db.Table("passkeys").Create(&passkey)
 	if result.Error != nil {
 		utils.JsonErrorResponse(c, 200500, "创建 passkey 失败")
 		return
@@ -182,7 +174,7 @@ func UpdatePasskey(c *gin.Context) {
 	var passkey models.Passkey
 
 	// 查找 passkey
-	result := db.Where("Passkey = ?", passkeyID).First(&passkey)
+	result := db.Table("passkeys").Where("Passkey = ?", passkeyID).First(&passkey)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			utils.JsonErrorResponse(c, 200404, "passkey 不存在")
@@ -197,7 +189,7 @@ func UpdatePasskey(c *gin.Context) {
 	passkey.Operator = req.Operator
 	passkey.IsActive = req.IsActive
 
-	result = db.Save(&passkey)
+	result = db.Table("passkeys").Save(&passkey)
 	if result.Error != nil {
 		utils.JsonErrorResponse(c, 200500, "更新 passkey 失败")
 		return
@@ -251,7 +243,7 @@ func DeletePasskey(c *gin.Context) {
 	}
 
 	db := database.GetDB()
-	result := db.Where("Passkey = ?", passkeyID).Delete(&models.Passkey{})
+	result := db.Table("passkeys").Where("Passkey = ?", passkeyID).Delete(&models.Passkey{})
 	if result.Error != nil {
 		utils.JsonErrorResponse(c, 200500, "删除 passkey 失败")
 		return
@@ -289,7 +281,7 @@ func GetPasskeyByID(c *gin.Context) {
 	var passkey models.Passkey
 
 	// 查找 passkey
-	result := db.Where("Passkey = ?", passkeyID).First(&passkey)
+	result := db.Table("passkeys").Where("Passkey = ?", passkeyID).First(&passkey)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			utils.JsonErrorResponse(c, 200404, "passkey 不存在")
@@ -350,7 +342,7 @@ func TogglePasskeyStatus(c *gin.Context) {
 	var passkey models.Passkey
 
 	// 查找 passkey
-	result := db.Where("Passkey = ?", passkeyID).First(&passkey)
+	result := db.Table("passkeys").Where("Passkey = ?", passkeyID).First(&passkey)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			utils.JsonErrorResponse(c, 200404, "passkey 不存在")
@@ -363,7 +355,7 @@ func TogglePasskeyStatus(c *gin.Context) {
 	// 切换状态
 	passkey.IsActive = !passkey.IsActive
 
-	result = db.Save(&passkey)
+	result = db.Table("passkeys").Save(&passkey)
 	if result.Error != nil {
 		utils.JsonErrorResponse(c, 200500, "更新 passkey 状态失败")
 		return

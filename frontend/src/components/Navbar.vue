@@ -128,10 +128,12 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import AuthModal from './AuthModal.vue';
 import { useAuth } from '../composables/useAuth';
 const { t, locale } = useI18n();
+const router = useRouter();
+
 
 // 使用全局认证状态
 const { isAuthenticated, userInfo, isAdmin, login, logout, getUserInfo, verifyPasskeyModifiable } = useAuth();
@@ -178,6 +180,7 @@ const handleLoginSuccess = (data) => {
   }
   showAuthModal.value = false;
   console.log('Login successful, user data:', data);
+  router.go(0)
 }
 
 // 退出登录
@@ -185,6 +188,7 @@ const handleLogout = () => {
   logout();
   // 可以添加退出成功的提示
   alert(t('auth.logout'));
+  router.go(0)
 }
 
 // 检查管理员权限

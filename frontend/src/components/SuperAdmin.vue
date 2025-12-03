@@ -70,7 +70,7 @@
                   <thead class="table-light">
                     <tr>
                       <th>{{ t('superadmin.passkey') }}</th>
-                      <th>{{ t('superadmin.description') }}</th>
+                      <th>{{ t('superadmin.pdescription') }}</th>
                       <th>{{ t('superadmin.operator') }}</th>
                       <th>{{ t('superadmin.created_at') }}</th>
                       <th>{{ t('superadmin.status') }}</th>
@@ -189,10 +189,10 @@ import { Modal } from 'bootstrap';
 import { useAuth } from '../composables/useAuth';
 import { useRouter } from 'vue-router'
 
-const 
+const router = useRouter()
 
 const { t } = useI18n();
-const { getAuthHeader } = useAuth();
+const { getAuthHeader, verifyPasskeyModifiable } = useAuth();
 
 // 状态管理
 const passkeys = ref([]);
@@ -477,7 +477,10 @@ watch(() => showCreateModal.value, (newVal) => {
 });
 
 // 组件挂载
-onMounted(() => {
+onMounted(async () => {
+  if(!(await verifyPasskeyModifiable())){
+    router.push({name:"home"})
+  }
   // 初始化模态框
   if (modal.value) {
     modalInstance.value = new Modal(modal.value);

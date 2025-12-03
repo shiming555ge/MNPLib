@@ -6,7 +6,7 @@ import base64, json
 # smiles式转存pdb
 def smiles_to_pdb(smiles):
     mol = Chem.MolFromSmiles(smiles)
-    # mol = Chem.AddHs(mol)                       # 加氢
+    mol = Chem.AddHs(mol)                       # 加氢
     AllChem.EmbedMolecule(mol)                 # 3D 构象
     AllChem.UFFOptimizeMolecule(mol)           # UFF 优化
     return Chem.MolToPDBBlock(mol)

@@ -25,7 +25,7 @@ func ExtendsCheck() gin.HandlerFunc {
 		// 查询数据库获取用户的 Extends 信息
 		db := database.GetDB()
 		var passkey models.Passkey
-		result := db.Where("Passkey = ?", currentPasskeyStr).First(&passkey)
+		result := db.Table("passkeys").Where("Passkey = ?", currentPasskeyStr).First(&passkey)
 		if result.Error != nil {
 			utils.JsonErrorResponse(c, http.StatusInternalServerError, "查询用户信息失败")
 			c.Abort()

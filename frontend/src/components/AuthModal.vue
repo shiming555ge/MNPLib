@@ -106,8 +106,7 @@ const handleSubmit = async () => {
         emit('login-success', info);
         
         // 显示成功消息
-        alert(t('auth.login_success'));
-        
+        alert(t('auth.login_success'));        
       } else {
         // 如果响应中没有token，显示错误
         error.value = t('auth.login_failed') + ': No token received';

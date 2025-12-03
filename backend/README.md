@@ -1,4 +1,238 @@
-# Back-end
+# MNPLib 后端
+
+MNPLib 后端是一个基于 Go 语言的化学分子库管理系统的服务器端，提供化合物数据管理、化学计算、用户认证等 RESTful API 服务。
+
+## 技术栈
+
+### 核心框架
+- **Go 1.24+**: 高性能编程语言
+- **Gin**: 轻量级 Web 框架，提供路由、中间件等功能
+- **GORM**: ORM 框架，简化数据库操作
+- **Viper**: 配置管理库，支持多种配置文件格式
+
+### 数据库
+- **MySQL 8.0+**: 关系型数据库，存储化合物数据和用户信息
+- **数据库驱动**: `github.com/go-sql-driver/mysql`
+
+### 认证和安全
+- **JWT (JSON Web Tokens)**: 用户认证和授权
+- **UUID**: 生成唯一的 passkey 标识符
+- **加密**: 数据加密和安全性保护
+
+### 化学计算
+- **RDKit**: 化学信息学工具包（通过 Python 集成）
+- **Python 3.8+**: 运行 RDKit 脚本
+
+### 工具和工具库
+- **Zerolog**: 结构化日志记录
+- **Google UUID**: UUID 生成库
+
+## 项目结构
+
+```
+backend/
+├── config/                    # 配置管理
+│   └── config.go             # 配置加载和初始化
+├── controllers/              # 控制器层（处理 HTTP 请求）
+│   ├── authController.go     # 认证相关控制器
+│   ├── dataController.go     # 数据相关控制器
+│   ├── passkeyController.go  # Passkey 管理控制器
+│   ├── rdkitController.go    # RDKit 化学计算控制器
+│   └── simple_data_controller.go # 简单数据控制器
+├── database/                 # 数据库连接和操作
+│   └── database.go           # 数据库初始化和连接
+├── middlewares/              # 中间件
+│   ├── extends_check.go      # 权限检查中间件
+│   ├── jwt_auth.go           # JWT 认证中间件
+│   └── validPath.go          # 路径验证中间件
+├── models/                   # 数据模型（GORM 结构体）
+│   ├── database.go           # 化合物数据模型
+│   └── passkey.go            # Passkey 模型
+├── router/                   # 路由定义
+│   └── router.go             # 路由配置和注册
+├── services/                 # 业务逻辑层
+│   ├── initService.go        # 初始化服务
+│   └── rdkitService.go       # RDKit 化学计算服务
+├── static/                   # 静态文件
+│   └── passkey-admin.html    # Passkey 管理页面(未使用)
+├── utils/                    # 工具函数
+│   ├── generate.go           # 生成工具函数
+│   ├── jsonResponse.go       # JSON 响应工具
+│   ├── logger.go             # 日志工具
+│   ├── python-core.go        # Python 调用工具
+│   └── validData.go          # 数据验证工具
+├── config_example.yaml       # 配置文件示例
+├── config.yaml               # 实际配置文件（需自行创建）
+├── main.go                   # 应用入口点
+├── rdkit_tools.py            # RDKit Python 工具脚本
+└── README.md                 # 本文档
+```
+
+## 安装和运行
+
+### 前提条件
+
+1. **Go 1.24+**: [下载地址](https://go.dev/dl/)
+2. **MySQL 8.0+**: [下载地址](https://www.mysql.com/)
+3. **Python 3.8+**: [下载地址](https://www.python.org/)
+4. **RDKit**: 化学信息学工具包
+
+### 安装步骤
+
+1. **克隆项目**:
+   ```bash
+   git clone https://github.com/shiming555ge/MNPLib.git
+   cd MNPLib/backend
+   ```
+
+2. **安装 Go 依赖**:
+   ```bash
+   go mod download
+   ```
+
+3. **配置数据库**:
+   - 创建 MySQL 数据库（如 `mnplib`）
+   - 执行数据库初始化脚本（见下文数据库结构部分）
+   - 复制 `config_example.yaml` 为 `config.yaml`
+   - 修改 `config.yaml` 中的数据库配置
+
+4. **安装 RDKit**:
+   ```bash
+   # 使用 conda 安装（推荐）
+   conda create -n rdkit-env -c conda-forge rdkit
+   conda activate rdkit-env
+   
+   # 或者使用 pip
+   pip install rdkit-pypi
+   ```
+
+5. **运行后端服务**:
+   ```bash
+   go run main.go
+   ```
+   服务将在 `http://localhost:9090` 启动
+
+### 构建可执行文件
+
+```bash
+# 构建
+go build -o mnplib-backend main.go
+
+# 运行
+./mnplib-backend
+```
+
+## 配置说明
+
+### 配置文件 (config.yaml)
+
+```yaml
+database:
+  name: mnplib                # 数据库名称
+  host: "127.0.0.1"          # 数据库主机
+  port: 3306                 # 数据库端口
+  user: root                 # 数据库用户名
+  pass: "your_password"      # 数据库密码
+
+enccryptokey: "32位加密密钥"  # 32位加密密钥，用于数据加密
+
+jwt:
+  secret: "your_jwt_secret"  # JWT 密钥，用于生成和验证 token
+
+rdkit:
+  python_path: "python"      # Python 解释器路径
+
+static: false                # 是否启用静态文件服务
+adress_port: ":9090"         # 服务器端口
+```
+
+### 环境变量
+
+可以通过环境变量覆盖配置：
+```bash
+export DATABASE_NAME=mnplib
+export DATABASE_HOST=localhost
+export DATABASE_PORT=3306
+export DATABASE_USER=root
+export DATABASE_PASS=your_password
+export JWT_SECRET=your_jwt_secret
+```
+
+## 数据库结构
+
+### data 表（化合物数据表）
+存储所有化合物信息，包括化学结构、质谱数据、生物活性等。
+
+```sql
+CREATE TABLE `data` (
+    `ID` VARCHAR(12) NOT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `Source` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `ItemName` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `ItemType` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `Formula` VARCHAR(127) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `SMILES` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `Description` ENUM('KNOWN COMPOUND','NEW NATURAL PRODUCT','NEW ANALOGS') NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `CAS_number` VARCHAR(127) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `ItemTag` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `Structure` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `MS1` VARCHAR(127) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `MS2` VARCHAR(511) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `Bioactivity` VARCHAR(511) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `NMR_13C_data` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    `Weight` FLOAT NULL DEFAULT NULL,
+    `FP` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+    PRIMARY KEY (`ID`) USING BTREE
+)
+COLLATE='utf8mb4_uca1400_ai_ci'
+ENGINE=InnoDB;
+```
+
+#### 字段说明：
+- **ID**: 化合物唯一标识符（12位字符串，主键）
+- **Source**: 数据来源
+- **ItemName**: 化合物名称
+- **ItemType**: 化合物类型（如生物碱、肽类等）
+- **Formula**: 分子式
+- **SMILES**: 简化分子线性输入规范
+- **Description**: 化合物描述（已知化合物、新天然产物、新类似物）
+- **CAS_number**: CAS登记号
+- **ItemTag**: 化合物标签
+- **Structure**: 化学结构信息
+- **MS1**: 一级质谱数据
+- **MS2**: 二级质谱数据（保护数据）
+- **Bioactivity**: 生物活性数据（保护数据）
+- **NMR_13C_data**: 碳13核磁共振数据（保护数据）
+- **Weight**: 分子量
+- **FP**: 分子指纹（用于相似度搜索）
+
+### passkeys 表（用户认证表）
+存储用户认证信息和权限。
+
+```sql
+CREATE TABLE `passkeys` (
+    `Passkey` VARCHAR(36) NOT NULL DEFAULT uuid() COLLATE 'utf8mb3_uca1400_ai_ci',
+    `Extends` TINYTEXT NOT NULL COLLATE 'utf8mb3_uca1400_ai_ci',
+    `Description` VARCHAR(511) NOT NULL DEFAULT '' COLLATE 'utf8mb3_uca1400_ai_ci',
+    `Operator` TINYTEXT NOT NULL DEFAULT '' COLLATE 'utf8mb3_uca1400_ai_ci',
+    `Is_Active` TINYINT(1) NOT NULL DEFAULT '1',
+    `Created_At` DATETIME NOT NULL DEFAULT current_timestamp()
+)
+COLLATE='utf8mb3_uca1400_ai_ci'
+ENGINE=InnoDB;
+```
+
+#### 字段说明：
+- **Passkey**: 用户唯一标识符（UUID，默认使用uuid()函数生成）
+- **Extends**: 创建者信息，用于权限管理（空值表示超级管理员）
+- **Description**: passkey描述
+- **Operator**: 操作者名称
+- **Is_Active**: 是否激活（1-激活，0-禁用）
+- **Created_At**: 创建时间
+
+### 数据关系
+- `data` 表存储所有化合物数据，是系统的核心数据表
+- `passkeys` 表用于用户认证和权限管理
+- 保护数据字段（MS2、Bioactivity、NMR_13C_data）需要用户认证后才能访问
 
 ## API 文档
 
@@ -155,241 +389,4 @@
 #### 验证是否可以修改passkey
 - **URL**: `GET /api/auth/verify-passkey-modifiable`
 - **描述**: 验证当前用户是否有权限修改passkey（中间件已验证Extends字段为空），返回成功状态
-- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
-- **响应**: 成功状态
-  ```json
-  {
-    "code": 200,
-    "message": "success"
-  }
-  ```
-
-### Passkey 管理 API
-
-#### 获取所有 passkey
-- **URL**: `GET /api/passkeys`
-- **描述**: 获取所有 passkey 列表，需要管理员权限。注意：不会返回当前登录用户自己的 passkey
-- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
-- **响应**: 
-  ```json
-  [
-    {
-      "passkey": "uuid-string",
-      "description": "passkey描述",
-      "operator": "操作者",
-      "created_at": "2023-01-01T00:00:00Z",
-      "is_active": true,
-      "extends": "创建者operator(passkey)"
-    }
-  ]
-  ```
-
-#### 创建 passkey
-- **URL**: `POST /api/passkeys`
-- **描述**: 创建新的 passkey，系统会自动生成 UUID。创建者的 operator(passkey) 信息会被存储在 Extends 字段中
-- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
-- **请求体**:
-  ```json
-  {
-    "description": "passkey描述",
-    "operator": "操作者",
-    "is_active": true
-  }
-  ```
-- **响应**: 创建的 passkey 信息
-  ```json
-  {
-    "passkey": "uuid-string",
-    "description": "passkey描述",
-    "operator": "操作者",
-    "created_at": "2023-01-01T00:00:00Z",
-    "is_active": true,
-    "extends": "创建者operator(passkey)"
-  }
-  ```
-
-#### 获取单个 passkey
-- **URL**: `GET /api/passkeys/{passkey}`
-- **描述**: 根据 passkey UUID 获取单个 passkey 的详细信息
-- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
-- **参数**:
-  - `passkey` (路径参数): passkey UUID
-- **响应**: 单个 passkey 信息
-  ```json
-  {
-    "passkey": "uuid-string",
-    "description": "passkey描述",
-    "operator": "操作者",
-    "created_at": "2023-01-01T00:00:00Z",
-    "is_active": true,
-    "extends": "创建者operator(passkey)"
-  }
-  ```
-
-#### 更新 passkey
-- **URL**: `PUT /api/passkeys/{passkey}`
-- **描述**: 更新指定 passkey 的信息。注意：不能修改自己的 passkey
-- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
-- **参数**:
-  - `passkey` (路径参数): passkey UUID
-- **请求体**:
-  ```json
-  {
-    "description": "更新后的描述",
-    "operator": "更新后的操作者",
-    "is_active": true
-  }
-  ```
-- **响应**: 更新后的 passkey 信息
-  ```json
-  {
-    "passkey": "uuid-string",
-    "description": "更新后的描述",
-    "operator": "更新后的操作者",
-    "created_at": "2023-01-01T00:00:00Z",
-    "is_active": true,
-    "extends": "创建者operator(passkey)"
-  }
-  ```
-
-#### 删除 passkey
-- **URL**: `DELETE /api/passkeys/{passkey}`
-- **描述**: 删除指定的 passkey。注意：不能删除自己的 passkey
-- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
-- **参数**:
-  - `passkey` (路径参数): passkey UUID
-- **响应**: 成功消息
-  ```json
-  {
-    "message": "删除成功"
-  }
-  ```
-
-#### 切换 passkey 状态
-- **URL**: `POST /api/passkeys/{passkey}/toggle`
-- **描述**: 启用或禁用指定的 passkey。注意：不能修改自己的 passkey 状态
-- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
-- **参数**:
-  - `passkey` (路径参数): passkey UUID
-- **响应**: 状态切换后的 passkey 信息
-  ```json
-  {
-    "passkey": "uuid-string",
-    "description": "passkey描述",
-    "operator": "操作者",
-    "created_at": "2023-01-01T00:00:00Z",
-    "is_active": false,
-    "extends": "创建者operator(passkey)"
-  }
-  ```
-
-### RDKit 化学计算 API
-
-#### 获取RDKit服务状态
-- **URL**: `GET /api/rdkit/status`
-- **描述**: 检查RDKit服务是否正常运行
-- **响应**: 服务状态信息
-  ```json
-  {
-    "initialized": true,
-    "available": true,
-    "status": "running"
-  }
-  ```
-
-#### 相似度搜索
-- **URL**: `GET /api/rdkit/similarity`
-- **描述**: 根据查询指纹进行相似度搜索
-- **参数**:
-  - `qfp` (必需): 查询指纹
-  - `threshold` (可选): 相似度阈值，默认为0.5
-- **响应**: 相似度搜索结果
-
-#### SMILES转指纹
-- **URL**: `GET /api/rdkit/smiles-to-fingerprint`
-- **描述**: 将SMILES字符串转换为分子指纹
-- **参数**:
-  - `smiles` (必需): SMILES字符串
-- **响应**: 分子指纹数据
-
-#### SMILES转PDB
-- **URL**: `GET /api/rdkit/smiles-to-pdb`
-- **描述**: 将SMILES字符串转换为PDB文件
-- **参数**:
-  - `smiles` (必需): SMILES字符串
-- **响应**: PDB文件数据
-
-#### 子结构匹配
-- **URL**: `GET /api/rdkit/is-substructure`
-- **描述**: 检查SMILES是否包含指定的SMARTS子结构
-- **参数**:
-  - `smarts_pattern` (必需): SMARTS模式
-  - `smiles` (必需): SMILES字符串
-- **响应**: 
-  ```json
-  {
-    "is_substructure": true/false
-  }
-  ```
-
-#### 子结构搜索
-- **URL**: `GET /api/rdkit/substructure-search`
-- **描述**: 根据SMARTS模式在数据库中查找所有匹配的化合物
-- **参数**:
-  - `smarts_pattern` (必需): SMARTS模式
-- **响应**: 匹配的化合物列表
-
-#### 精确匹配搜索
-- **URL**: `GET /api/rdkit/exact-match`
-- **描述**: 查找SMILES相同的结构并返回其ID
-- **参数**:
-  - `smiles` (必需): SMILES字符串
-- **响应**: 匹配的化合物ID
-
-## 项目结构
-
-### config
-存放用来读取配置文件的config.go（用viper）
-
-### controllers
-所有在这里的文件，负责选择调用哪个service里的函数，然后返回json数据。
-
-### utils
-此文件夹用以存放工具类，logger.go放在里头了
-
-|文件|功能|
-|---|---|
-|config.go|配置文件|
-|jwt.go|jwt相关|
-|jsonResponse.go|格式化json输出|
-|crypto.go|加密/解密，密钥放在config.yaml里|
-
-- 后端如果有错误日志产生用zerolog搞定吧，初始化那些放在utils/logger.go里了
-
-### middleware
-此文件夹用以存放中间件
-
-### models
-此文件夹用来存放数据模型
-
-### services
-所有需要操作数据库的go文件放在这里
-
-### routes
-此文件夹用以存放路径
-请放到router.go对应位置
-推荐每个种api放一个文件，如user,auth，具体见apifox
-
-### static
-静态文件，如icon，css，js等
-
-### upload
-上传的文件 暂时不知道是否使用这种形式。
-
-## To Dos
-
-各种数据校验
-
-注册保存手机号和邮箱
-
-奇怪的外键问题
+- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即

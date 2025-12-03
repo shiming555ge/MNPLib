@@ -14,7 +14,7 @@ import (
 
 func main() {
 	database.Init()
-	services.InitializeCompoundData()
+	// services.InitializeCompoundData()
 	r := gin.Default()
 	router.Init(r)
 	services.InitRdkit()
