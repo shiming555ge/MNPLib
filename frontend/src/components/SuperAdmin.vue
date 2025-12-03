@@ -282,18 +282,13 @@ const createPasskey = async () => {
     const response = await fetch('/api/passkeys', {
       method: 'POST',
       headers,
-      body: {
-        description: form.value.description,
-        operator: form.value.operator,
-        is_active: form.value.is_active
-      }
-    });
-    console.log({
+      body: JSON.stringify({
         description: form.value.description,
         operator: form.value.operator,
         is_active: form.value.is_active
       })
-    
+    });
+
     if (response.ok) {
       const data = await response.json();
       passkeys.value.unshift(data);

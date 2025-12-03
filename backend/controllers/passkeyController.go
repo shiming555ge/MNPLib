@@ -12,7 +12,7 @@ import (
 
 // PasskeyRequest passkey 请求结构
 type PasskeyRequest struct {
-	Description string `json:"description" binding:"required"`
+	Description string `json:"description"`
 	Operator    string `json:"operator" binding:"required"`
 	IsActive    bool   `json:"is_active"`
 }
