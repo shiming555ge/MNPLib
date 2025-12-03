@@ -7,12 +7,14 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://47.98.62.103/',
-        // target: 'http://localhost:9090/',
+        // target: 'http://47.98.62.103/',
+        target: 'http://localhost:9090/',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '/api')
       }
-    }
+    },
+    host: '127.0.0.1',
+    port: 8080
   }
 })

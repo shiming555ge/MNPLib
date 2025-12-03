@@ -16,6 +16,22 @@ func Init(r *gin.Engine) {
 		auth := api.Group("/auth")
 		{
 			auth.POST("/login", controllers.Login)
+			// 验证登录状态（需要JWT认证）
+			auth.GET("/verify", middlewares.JWTAuth(), controllers.VerifyLoginStatus)
+			// 验证是否可以修改passkey（需要JWT认证和Extends为空）
+			auth.GET("/verify-passkey-modifiable", middlewares.JWTAuth(), middlewares.ExtendsCheck(), controllers.VerifyPasskeyModifiable)
+		}
+
+		// Passkey 管理路由（需要JWT认证和Extends为空）
+		passkeys := api.Group("/passkeys")
+		passkeys.Use(middlewares.JWTAuth(), middlewares.ExtendsCheck())
+		{
+			passkeys.GET("", controllers.GetAllPasskeys)
+			passkeys.POST("", controllers.CreatePasskey)
+			passkeys.GET("/:passkey", controllers.GetPasskeyByID)
+			passkeys.PUT("/:passkey", controllers.UpdatePasskey)
+			passkeys.DELETE("/:passkey", controllers.DeletePasskey)
+			passkeys.POST("/:passkey/toggle", controllers.TogglePasskeyStatus)
 		}
 
 		// 数据相关路由
@@ -30,7 +46,7 @@ func Init(r *gin.Engine) {
 			data.GET("/descriptions", controllers.GetDescriptions)
 			data.GET("/sources", controllers.GetSources)
 			// 受保护的数据路由，需要JWT认证
-			data.GET("/:id/full", middlewares.JWTAuth(), controllers.GetDataByIDFull)
+			data.GET("/:id/protected", middlewares.JWTAuth(), controllers.GetDataByIDFull)
 		}
 		// RDKit相关路由
 		rdkit := api.Group("/rdkit")

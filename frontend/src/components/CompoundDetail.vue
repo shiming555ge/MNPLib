@@ -1,9 +1,11 @@
 <script setup>
-import { ref, watch, computed, onUnmounted } from 'vue'
+import { ref, watch, computed, onUnmounted, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MoleculeViewer from './MoleculeViewer.vue'
+import { useAuth } from '../composables/useAuth'
 
 const { t } = useI18n()
+const { isAuthenticated, getAuthHeader } = useAuth()
 
 const props = defineProps({
   compound: {
@@ -21,14 +23,54 @@ const emit = defineEmits(['update:show'])
 const offcanvasElement = ref(null)
 const detailedData = ref(null)
 const loadingDetail = ref(false)
-const ms2Data = ref(null)
-const cnmrData = ref(null)
-const bioactivityData = ref(null)
-const loadingSpecialData = ref({
-  ms2: false,
-  cnmr: false,
-  bioactivity: false
-})
+const protectedData = ref(null)
+const loadingSpecialData = ref(true)
+const has_passkey = ref(false)
+
+// 复制文本到剪贴板
+const copyToClipboard = async (text) => {
+  if (!text || text === 'N/A') return
+  
+  try {
+    await navigator.clipboard.writeText(text)
+    // 可以添加一个简单的提示，这里使用Bootstrap的toast或alert
+    showToast('已复制到剪贴板')
+  } catch (err) {
+    console.error('复制失败:', err)
+    showToast('复制失败，请手动复制', 'error')
+  }
+}
+
+// 显示提示消息
+const showToast = (message, type = 'success') => {
+  // 创建一个简单的提示元素
+  const toastEl = document.createElement('div')
+  toastEl.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`
+  toastEl.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 200px;'
+  toastEl.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  `
+  
+  document.body.appendChild(toastEl)
+  
+  // 3秒后自动移除
+  setTimeout(() => {
+    if (toastEl.parentNode) {
+      toastEl.remove()
+    }
+  }, 3000)
+}
+
+// 截断文本并添加省略号
+const truncateText = (text, maxLength = 30) => {
+  if (!text || text === 'N/A') return text
+  
+  // 确保text是字符串
+  const textStr = String(text)
+  if (textStr.length <= maxLength) return textStr
+  return textStr.substring(0, maxLength) + '...'
+}
 
 // 监听compound变化，获取详细数据
 watch(() => props.compound, async (newCompound) => {
@@ -37,11 +79,17 @@ watch(() => props.compound, async (newCompound) => {
     await fetchSpecialData(newCompound.id)
   } else {
     detailedData.value = null
-    ms2Data.value = null
-    cnmrData.value = null
-    bioactivityData.value = null
+    protectedData.value = null
   }
 }, { immediate: true })
+
+// 监听认证状态变化，重新获取受保护的数据
+watch(isAuthenticated, (newVal) => {
+  if (newVal && props.compound && props.compound.id) {
+    // 用户登录后，重新获取受保护的数据
+    fetchSpecialData(props.compound.id)
+  }
+})
 
 // 监听show变化，控制offcanvas显示
 watch(() => props.show, (newVal) => {
@@ -68,7 +116,7 @@ const fetchDetailedData = async (id) => {
     const response = await fetch(`/api/data/${id}`)
     if (response.ok) {
       const result = await response.json()
-      detailedData.value = result.data || result
+      detailedData.value = result.data || null
     } else {
       console.error('Failed to fetch detailed data:', response.status)
       detailedData.value = null
@@ -86,45 +134,85 @@ const fetchSpecialData = async (id) => {
   if (!id) return
   
   // 获取受保护的数据
-  loadingSpecialData.value.bioactivity = true
+  loadingSpecialData.value = true
   try {
-    const response = await fetch(`/api/data/${id}/bioactivity`)
+    const headers = {
+      'Content-Type': 'application/json',
+      ...getAuthHeader()
+    }
+    
+    const response = await fetch(`/api/data/${id}/protected`, {
+      headers
+    })
+    
     if (response.ok) {
       const result = await response.json()
-      if (result.code !== 200400) {
-        bioactivityData.value = result.data || result
-      } else {
-        bioactivityData.value = null
-      }
+      protectedData.value = result.data || null
     } else {
-      bioactivityData.value = null
+      protectedData.value = null
+      console.warn('Failed to fetch protected data:', response.status)
     }
   } catch (error) {
-    console.error('Error fetching Bioactivity data:', error)
-    bioactivityData.value = null
+    console.error('Error fetching protected data:', error)
+    protectedData.value = null
   } finally {
-    loadingSpecialData.value.bioactivity = false
+    loadingSpecialData.value = false
   }
 }
-
-// 合并数据：优先使用详细数据，如果没有则使用基本数据
-const mergedData = computed(() => {
-  if (detailedData.value) {
-    return { ...props.compound, ...detailedData.value }
-  }
-  return props.compound
-})
 
 // 手动关闭方法
 const handleClose = () => {
   emit('update:show', false)
 }
 
+// 初始化Bootstrap tooltip
+const initTooltips = () => {
+  if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+    // 初始化所有带有data-bs-toggle="tooltip"的元素
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    tooltipTriggerList.forEach(tooltipTriggerEl => {
+      new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+  }
+}
+
+// 监听show变化，当offcanvas显示时初始化tooltip
+watch(() => props.show, (newVal) => {
+  if (newVal && offcanvasElement.value) {
+    // 使用Bootstrap的JavaScript API来显示offcanvas
+    if (typeof bootstrap !== 'undefined' && bootstrap.Offcanvas) {
+      const offcanvas = new bootstrap.Offcanvas(offcanvasElement.value)
+      offcanvas.show()
+      
+      // 监听隐藏事件
+      offcanvasElement.value.addEventListener('hidden.bs.offcanvas', () => {
+        emit('update:show', false)
+      })
+      
+      // 初始化tooltip
+      nextTick(() => {
+        initTooltips()
+      })
+    }
+  }
+})
+
 // 清理函数
 onUnmounted(() => {
   if (offcanvasElement.value) {
     offcanvasElement.value.removeEventListener('hidden.bs.offcanvas', () => {
       emit('update:show', false)
+    })
+  }
+  
+  // 清理tooltip
+  if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    tooltipTriggerList.forEach(tooltipTriggerEl => {
+      const tooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl)
+      if (tooltip) {
+        tooltip.dispose()
+      }
     })
   }
 })
@@ -143,12 +231,12 @@ onUnmounted(() => {
   >
     <div class="offcanvas-header">
       <h5 class="offcanvas-title" id="compoundDetailOffcanvasLabel">
-        {{ mergedData ? mergedData.item_name?.replace(/"/g, "") || mergedData.ItemName?.replace(/"/g, "") || t('browse.compound_details') : t('browse.compound_details') }}
+        {{ t('browse.compound_details') }}
       </h5>
       <button type="button" class="btn-close" @click="handleClose" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
-      <div v-if="mergedData" class="compound-detail">
+      <div v-if="detailedData" class="compound-detail">
         <!-- 加载状态 -->
         <div v-if="loadingDetail" class="text-center py-3">
           <div class="spinner-border text-primary" role="status">
@@ -164,7 +252,8 @@ onUnmounted(() => {
           </div>
           <div class="card-body text-center">
             <MoleculeViewer 
-              :smiles="mergedData.smiles" 
+              :id="detailedData.id" 
+              :smiles="detailedData.smiles" 
               :width="300" 
               :height="200"
             />
@@ -179,17 +268,96 @@ onUnmounted(() => {
           <div class="card-body">
             <div class="row">
               <div class="col-md-12">
-                <p><strong>{{ t('details.id') }}:</strong> {{ mergedData.id || mergedData.ID || 'N/A' }}</p>
-                <p><strong>{{ t('details.source') }}:</strong> {{ mergedData.source || mergedData.Source || 'N/A' }}</p>
-                <p><strong>{{ t('details.compound_name') }}:</strong> {{ mergedData.item_name || mergedData.ItemName || 'N/A' }}</p>
-                <p><strong>{{ t('details.type') }}:</strong> {{ mergedData.item_type || mergedData.ItemType || 'N/A' }}</p>
-                <p><strong>{{ t('details.iupac_name') }}:</strong> {{ mergedData.iupac_name || mergedData.IUPACName || 'N/A' }}</p>
+                <p>
+                  <strong>{{ t('details.id') }}:</strong> 
+                  <span 
+                    class="copyable-text" 
+                    :title="detailedData.id || 'N/A'"
+                    @click="copyToClipboard(detailedData.id)"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ truncateText(detailedData.id, 20) || 'N/A' }}
+                  </span>
+                  <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
+                     @click="copyToClipboard(detailedData.id)"
+                     title="点击复制"></i>
+                </p>
+                <p>
+                  <strong>{{ t('details.compound_name') }}:</strong> 
+                  <span 
+                    :title="detailedData.item_name || 'N/A'"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ truncateText(detailedData.item_name, 25) || 'N/A' }}
+                  </span>
+                </p>
+                <p>
+                  <strong>{{ t('details.type') }}:</strong> 
+                  {{ detailedData.item_type || 'N/A' }}
+                </p>
+                <p>
+                  <strong>{{ t('details.weight') }}:</strong> 
+                  {{ detailedData.weight || 'N/A' }}
+                </p>
               </div>
               <div class="col-md-12">
-                <p><strong>{{ t('details.description') }}:</strong> {{ mergedData.description || mergedData.Description || 'N/A' }}</p>
-                <p><strong>{{ t('details.cas_number') }}:</strong> {{ mergedData.cas_number || mergedData.CASNumber || 'N/A' }}</p>
-                <p><strong>{{ t('details.formula') }}:</strong> {{ mergedData.formula || mergedData.Formula || 'N/A' }}</p>
-                <p><strong>{{ t('details.smiles') }}:</strong> {{ mergedData.smiles || mergedData.Smiles || 'N/A' }}</p>
+                <p>
+                  <strong>{{ t('details.description') }}:</strong> 
+                  <span 
+                    :title="detailedData.description || 'N/A'"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ truncateText(detailedData.description, 40) || 'N/A' }}
+                  </span>
+                </p>
+                <p>
+                  <strong>{{ t('details.cas_number') }}:</strong> 
+                  <span 
+                    class="copyable-text" 
+                    :title="detailedData.cas_number || 'N/A'"
+                    @click="copyToClipboard(detailedData.cas_number)"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ truncateText(detailedData.cas_number, 15) || 'N/A' }}
+                  </span>
+                  <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
+                     @click="copyToClipboard(detailedData.cas_number)"
+                     title="点击复制"></i>
+                </p>
+                <p>
+                  <strong>{{ t('details.formula') }}:</strong> 
+                  <span 
+                    class="copyable-text" 
+                    :title="detailedData.formula || 'N/A'"
+                    @click="copyToClipboard(detailedData.formula)"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ truncateText(detailedData.formula, 20) || 'N/A' }}
+                  </span>
+                  <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
+                     @click="copyToClipboard(detailedData.formula)"
+                     title="点击复制"></i>
+                </p>
+                <p>
+                  <strong>{{ t('details.smiles') }}:</strong> 
+                  <span 
+                    class="copyable-text" 
+                    :title="detailedData.smiles || 'N/A'"
+                    @click="copyToClipboard(detailedData.smiles)"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ truncateText(detailedData.smiles, 30) || 'N/A' }}
+                  </span>
+                  <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
+                     @click="copyToClipboard(detailedData.smiles)"
+                     title="点击复制"></i>
+                </p>
               </div>
             </div>
           </div>
@@ -203,23 +371,53 @@ onUnmounted(() => {
           <div class="card-body">
             <div class="row">
               <div class="col-md-6">
-                <p><strong>MS1:</strong> {{ mergedData.ms1 || mergedData.MS1 || 'N/A' }}</p>
-                <p><strong>MS2:</strong> 
-                  <span v-if="loadingSpecialData.ms2" class="text-muted">加载中...</span>
-                  <span v-else-if="ms2Data">{{ ms2Data }}</span>
+                <p>
+                  <strong>MS1:</strong> 
+                  <span 
+                    :title="detailedData.ms1 || 'N/A'"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ truncateText(detailedData.ms1, 25) || 'N/A' }}
+                  </span>
+                </p>
+                <p>
+                  <strong>MS2:</strong> 
+                  <span v-if="loadingSpecialData" class="text-muted">加载中...</span>
+                  <span v-else-if="protectedData" 
+                    :title="protectedData.ms2"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ truncateText(protectedData.ms2, 25) }}
+                  </span>
                   <span v-else>N/A</span>
                 </p>
               </div>
               <div class="col-md-6">
-                <p><strong>C-NMR:</strong> 
-                  <span v-if="loadingSpecialData.cnmr" class="text-muted">加载中...</span>
-                  <span v-else-if="cnmrData">{{ cnmrData }}</span>
+                <p>
+                  <strong>C13-NMR:</strong> 
+                  <span v-if="loadingSpecialData" class="text-muted">加载中...</span>
+                  <span v-else-if="protectedData"
+                    :title="protectedData.nmr_13c_data"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ truncateText(protectedData.nmr_13c_data, 25) }}
+                  </span>
                   <span v-else>N/A</span>
                 </p>
-                <p><strong>{{ t('details.bioactivity') }}:</strong> 
-                  <span v-if="loadingSpecialData.bioactivity" class="text-muted">加载中...</span>
-                  <span v-else-if="bioactivityData">{{ bioactivityData }}</span>
-                  <span v-else>{{ mergedData.bioactivity || mergedData.Bioactivity || 'N/A' }}</span>
+                <p>
+                  <strong>{{ t('details.bioactivity') }}:</strong> 
+                  <span v-if="loadingSpecialData" class="text-muted">加载中...</span>
+                  <span v-else-if="protectedData"
+                    :title="protectedData.bioactivity"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ truncateText(protectedData.bioactivity, 25) }}
+                  </span>
+                  <span v-else>N/A</span>
                 </p>
               </div>
             </div>
@@ -232,10 +430,36 @@ onUnmounted(() => {
             <h6 class="card-title mb-0"><i class="bi bi-card-text"></i> {{ t('details.other_info') }}</h6>
           </div>
           <div class="card-body row">
-            <div class="col-6 p-1"><strong>{{ t('details.tag') }}:</strong> {{ mergedData.item_tag || mergedData.ItemTag || 'N/A' }}</div>
-            <div class="col-6 p-1"><strong>{{ t('details.structure') }}:</strong> {{ mergedData.structure || mergedData.Structure || 'N/A' }}</div>
-            <div class="col-6 p-1"><strong>{{ t('details.created_at') }}:</strong> {{ mergedData.created_at || mergedData.CreatedAt || 'N/A' }}</div>
-            <div class="col-6 p-1"><strong>{{ t('details.updated_at') }}:</strong> {{ mergedData.updated_at || mergedData.UpdatedAt || 'N/A' }}</div>
+            <div class="col-6 p-1">
+              <strong>{{ t('details.tag') }}:</strong> 
+              <span 
+                :title="detailedData.item_tag || 'N/A'"
+                data-bs-toggle="tooltip" 
+                data-bs-placement="top"
+              >
+                {{ truncateText(detailedData.item_tag, 15) || 'N/A' }}
+              </span>
+            </div>
+            <div class="col-6 p-1">
+              <strong>{{ t('details.source') }}:</strong> 
+              <span 
+                :title="detailedData.source || 'N/A'"
+                data-bs-toggle="tooltip" 
+                data-bs-placement="top"
+              >
+                {{ truncateText(detailedData.source, 15) || 'N/A' }}
+              </span>
+            </div>
+            <div class="col-6 p-1">
+              <strong>FP:</strong> 
+              <span 
+                :title="detailedData.fp || 'N/A'"
+                data-bs-toggle="tooltip" 
+                data-bs-placement="top"
+              >
+                {{ truncateText(detailedData.fp, 12) || 'N/A' }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -295,5 +519,29 @@ onUnmounted(() => {
 
 .compound-detail::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* 可复制文本的样式 */
+.copyable-text {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px dotted #ccc;
+  padding: 0 2px;
+}
+
+.copyable-text:hover {
+  background-color: #f0f8ff;
+  border-bottom-color: #007bff;
+}
+
+/* 复制图标样式 */
+.bi-clipboard {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.bi-clipboard:hover {
+  opacity: 1;
+  color: #007bff;
 }
 </style>

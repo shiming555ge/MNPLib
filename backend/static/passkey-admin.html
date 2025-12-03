@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passkey 管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .auth-section, .management-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            width: auto;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        .close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔑 Passkey 管理系统</h1>
+            <p>安全地管理您的访问密钥</p>
+            <button class="btn logout-btn" id="logoutBtn" style="display: none;">退出登录</button>
+        </div>
+
+        <div class="content">
+            <!-- 认证部分 -->
+            <div class="auth-section">
+                <h2 class="section-title">🔐 身份验证</h2>
+                <div id="loginSection">
+                    <div class="form-group">
+                        <label for="passkey">Passkey</label>
+                        <input type="text" id="passkey" class="form-control" placeholder="请输入您的 passkey">
+                    </div>
+                    <button class="btn" id="loginBtn">登录</button>
+                </div>
+                <div id="userInfo" style="display: none;">
+                    <div class="status info">
+                        <strong>已登录</strong>
+                        <div id="userDetails"></div>
+                    </div>
+                    <button class="btn btn-secondary" id="refreshBtn">刷新列表</button>
+                </div>
+                <div id="authStatus" class="status"></div>
+            </div>
+
+            <!-- 管理部分 -->
+            <div class="management-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="section-title">📋 Passkey 列表</h2>
+                    <button class="btn btn-success" id="addPasskeyBtn" style="display: none;">+ 添加 Passkey</button>
+                </div>
+                
+                <div id="managementStatus" class="status"></div>
+                
+                <div class="table-container">
+                    <table id="passkeyTable">
+                        <thead>
+                            <tr>
+                                <th>Passkey</th>
+                                <th>描述</th>
+                                <th>操作员</th>
+                                <th>创建者</th>
+                                <th>创建时间</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="passkeyTableBody">
+                            <!-- 数据将通过 JavaScript 动态加载 -->
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px;">
+                                    请先登录以查看和管理 Passkey
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑 Passkey 模态框 -->
+    <div class="modal" id="passkeyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">添加 Passkey</h3>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <form id="passkeyForm">
+                <div class="form-group">
+                    <label for="description">描述 *</label>
+                    <input type="text" id="description" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="operator">操作员 *</label>
+                    <input type="text" id="operator" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="isActive">
+                        <input type="checkbox" id="isActive" checked> 启用
+                    </label>
+                </div>
+                <input type="hidden" id="editPasskeyId">
+                <div class="form-row">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">取消</button>
+                    <button type="submit" class="btn" id="saveBtn">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // API 基础 URL
+        const API_BASE = '/api';
+        let currentToken = null;
+
+        // DOM 元素
+        const loginSection = document.getElementById('loginSection');
+        const userInfo = document.getElementById('userInfo');
+        const authStatus = document.getElementById('authStatus');
+        const managementStatus = document.getElementById('managementStatus');
+        const passkeyTableBody = document.getElementById('passkeyTableBody');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const addPasskeyBtn = document.getElementById('addPasskeyBtn');
+        const passkeyModal = document.getElementById('passkeyModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const passkeyForm = document.getElementById('passkeyForm');
+        const modalTitle = document.getElementById('modalTitle');
+
+        // 检查本地存储中的 token
+        function checkAuth() {
+            const token = localStorage.getItem('passkey_token');
+            if (token) {
+                currentToken = token;
+                updateUIAfterLogin();
+                fetchPasskeys();
+            }
+        }
+
+        // 登录函数
+        async function login() {
+            const passkey = document.getElementById('passkey').value.trim();
+            if (!passkey) {
+                showAuthStatus('请输入 passkey', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ passkey })
+                });
+
+                const data = await response.json();
+                
+                if (data.code === 200200) {
+                    currentToken = data.data.token;
+                    localStorage.setItem('passkey_token', currentToken);
+                    showAuthStatus('登录成功！', 'success');
+                    updateUIAfterLogin();
+                    fetchPasskeys();
+                } else {
+                    showAuthStatus(data.msg || '登录失败', 'error');
+                }
+            } catch (error) {
+                showAuthStatus('网络错误，请检查连接', 'error');
+                console.error('Login error:', error);
+            }
+        }
+
+        // 更新登录后的 UI
+        function updateUIAfterLogin() {
+            loginSection.style.display = 'none';
+            userInfo.style.display = 'block';
+            logoutBtn.style.display = 'block';
+            addPasskeyBtn.style.display = 'block';
+            
+            // 解码 token 获取用户信息（简单版本）
+            try {
+                const payload = JSON.parse(atob(currentToken.split('.')[1]));
+                document.getElementById('userDetails').innerHTML = `
+                    <div>Passkey: ${payload.passkey || 'N/A'}</div>
+                    <div>操作员: ${payload.operator || 'N/A'}</div>
+                `;
+            } catch (e) {
+                document.getElementById('userDetails').innerHTML = '无法解析用户信息';
+            }
+        }
+
+        // 登出函数
+        function logout() {
+            currentToken = null;
+            localStorage.removeItem('passkey_token');
+            loginSection.style.display = 'block';
+            userInfo.style.display = 'none';
+            logoutBtn.style.display = 'none';
+            addPasskeyBtn.style.display = 'none';
+            passkeyTableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">
+                        请先登录以查看和管理 Passkey
+                    </td>
+                </tr>
+            `;
+            showAuthStatus('已退出登录', 'info');
+        }
+
+        // 获取所有 passkey
+        async function fetchPasskeys() {
+            if (!currentToken) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/passkeys`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.code === 200200) {
+                    renderPasskeys(data.data);
+                    showManagementStatus(`加载了 ${data.data.length} 个 passkey`, 'success');
+                } else {
+                    showManagementStatus(data.msg || '获取数据失败', 'error');
+                    if (data.code === 200401) {
+                        logout(); // token 无效，强制登出
+                    }
+                }
+            } catch (error) {
+                showManagementStatus('网络错误，请检查连接', 'error');
+                console.error('Fetch passkeys error:', error);
+            }
+        }
+
+        // 渲染 passkey 列表
+        function renderPasskeys(passkeys) {
+            if (passkeys.length === 0) {
+                passkeyTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">
+                            暂无 passkey 数据，点击"添加 Passkey"创建第一个
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            passkeys.forEach(passkey => {
+                const createdAt = new Date(passkey.created_at).toLocaleString('zh-CN');
+                html += `
+                    <tr>
+                        <td><code style="background: #f1f1f1; padding: 2px 6px; border-radius: 4px;">${passkey.passkey}</code></td>
+                        <td>${passkey.description || ''}</td>
+                        <td>${passkey.operator}</td>
+                        <td><small style="color: #666;">${passkey.extends || ''}</small></td>
+                        <td>${createdAt}</td>
+                        <td>
+                            <span class="badge ${passkey.is_active ? 'active' : 'inactive'}">
+                                ${passkey.is_active ? '启用' : '禁用'}
+                            </span>
+                        </td>
+                        <td class="actions">
+                            <button class="btn btn-sm" onclick="editPasskey('${passkey.passkey}')">编辑</button>
+                            <button class="btn btn-sm ${passkey.is_active ? 'btn-secondary' : 'btn-success'}" 
+                                    onclick="togglePasskeyStatus('${passkey.passkey}')">
+                                ${passkey.is_active ? '禁用' : '启用'}
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deletePasskey('${passkey.passkey}')">删除</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            passkeyTableBody.innerHTML = html;
+        }
+
+        // 添加 passkey
+        function addPasskey() {
+            document.getElementById('editPasskeyId').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('operator').value = '';
+            document.getElementById('isActive').checked = true;
+            modalTitle.textContent = '添加 Passkey';
+            passkeyModal.style.display = 'flex';
+        }
+
+        // 编辑 passkey
+        async function editPasskey(passkeyId) {
+            if (!currentToken) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/passkeys`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.code === 200200) {
+                    const passkey = data.data.find(p => p.passkey === passkeyId);
+                    if (passkey) {
+                        document.getElementById('editPasskeyId').value = passkey.passkey;
+                        document.getElementById('description').value = passkey.description;
+                        document.getElementById('operator').value = passkey.operator;
+                        document.getElementById('isActive').checked = passkey.is_active;
+                        modalTitle.textContent = '编辑 Passkey';
+                        passkeyModal.style.display = 'flex';
+                    }
+                }
+            } catch (error) {
+                showManagementStatus('获取 passkey 详情失败', 'error');
+                console.error('Edit passkey error:', error);
+            }
+        }
+
+        // 保存 passkey（添加或更新）
+        async function savePasskey(event) {
+            event.preventDefault();
+            
+            const passkeyId = document.getElementById('editPasskeyId').value;
+            const description = document.getElementById('description').value.trim();
+            const operator = document.getElementById('operator').value.trim();
+            const isActive = document.getElementById('isActive').checked;
+
+            if (!description || !operator) {
+                showManagementStatus('描述和操作员不能为空', 'error');
+                return;
+            }
+
+            const passkeyData = {
+                description,
+                operator,
+                is_active: isActive
+            };
+
+            try {
+                let response;
+                if (passkeyId) {
+                    // 更新现有 passkey
+                    response = await fetch(`${API_BASE}/passkeys/${passkeyId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${currentToken}`
+                        },
+                        body: JSON.stringify(passkeyData)
+                    });
+                } else {
+                    // 创建新 passkey
+                    response = await fetch(`${API_BASE}/passkeys`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${currentToken}`
+                        },
+                        body: JSON.stringify(passkeyData)
+                    });
+                }
+
+                const data = await response.json();
+                
+                if (data.code === 200200) {
+                    showManagementStatus(passkeyId ? '更新成功！' : '创建成功！', 'success');
+                    passkeyModal.style.display = 'none';
+                    fetchPasskeys();
+                } else {
+                    showManagementStatus(data.msg || '操作失败', 'error');
+                }
+            } catch (error) {
+                showManagementStatus('网络错误，请检查连接', 'error');
+                console.error('Save passkey error:', error);
+            }
+        }
+
+        // 切换 passkey 状态
+        async function togglePasskeyStatus(passkeyId) {
+            if (!currentToken || !confirm('确定要切换此 passkey 的状态吗？')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/passkeys/${passkeyId}/toggle`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.code === 200200) {
+                    showManagementStatus('状态更新成功！', 'success');
+                    fetchPasskeys();
+                } else {
+                    showManagementStatus(data.msg || '操作失败', 'error');
+                }
+            } catch (error) {
+                showManagementStatus('网络错误，请检查连接', 'error');
+                console.error('Toggle passkey status error:', error);
+            }
+        }
+
+        // 删除 passkey
+        async function deletePasskey(passkeyId) {
+            if (!currentToken || !confirm('确定要删除此 passkey 吗？此操作不可撤销！')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/passkeys/${passkeyId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.code === 200200) {
+                    showManagementStatus('删除成功！', 'success');
+                    fetchPasskeys();
+                } else {
+                    showManagementStatus(data.msg || '删除失败', 'error');
+                }
+            } catch (error) {
+                showManagementStatus('网络错误，请检查连接', 'error');
+                console.error('Delete passkey error:', error);
+            }
+        }
+
+        // 显示状态消息
+        function showAuthStatus(message, type) {
+            authStatus.textContent = message;
+            authStatus.className = 'status ' + type;
+            authStatus.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    authStatus.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function showManagementStatus(message, type) {
+            managementStatus.textContent = message;
+            managementStatus.className = 'status ' + type;
+            managementStatus.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    managementStatus.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            
+            loginBtn.addEventListener('click', login);
+            logoutBtn.addEventListener('click', logout);
+            refreshBtn.addEventListener('click', fetchPasskeys);
+            addPasskeyBtn.addEventListener('click', addPasskey);
+            
+            closeModal.addEventListener('click', () => {
+                passkeyModal.style.display = 'none';
+            });
+            
+            cancelBtn.addEventListener('click', () => {
+                passkeyModal.style.display = 'none';
+            });
+            
+            passkeyForm.addEventListener('submit', savePasskey);
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', (event) => {
+                if (event.target === passkeyModal) {
+                    passkeyModal.style.display = 'none';
+                }
+            });
+            
+            // 按回车键登录
+            document.getElementById('passkey').addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    login();
+                }
+            });
+        });
+
+        // 使函数在全局可用
+        window.editPasskey = editPasskey;
+        window.togglePasskeyStatus = togglePasskeyStatus;
+        window.deletePasskey = deletePasskey;
+    </script>
+</body>
+</html>

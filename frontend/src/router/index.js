@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from '../components/Home.vue'
 import Browse from "../components/Browse.vue";
 import Query from "../components/Query.vue";
+import About from '../components/About.vue';
+import SuperAdmin from '../components/SuperAdmin.vue';
 import NotFound from '../components/NotFound.vue';
 
 const routes = [
@@ -19,6 +21,16 @@ const routes = [
         path: '/query',
         name: 'query',
         component: Query
+    },
+    {
+        path: '/about',
+        name: 'about',
+        component: About
+    },
+    {
+        path: '/superadmin',
+        name: 'superadmin',
+        component: SuperAdmin
     },
     {
         path: '/:pathMatch(.*)*',
@@ -47,7 +59,9 @@ router.afterEach((to, from) => {
     const pageTitles = {
         '/': 'MNPLib - Home',
         '/browse': 'MNPLib - Browse Compounds',
-        '/query': 'MNPLib - Chemical Query'
+        '/query': 'MNPLib - Chemical Query',
+        '/about': 'MNPLib - About',
+        '/superadmin': 'MNPLib - Super Admin'
     };
     
     const title = pageTitles[to.path] || 'MNPLib - Marine Natural Product Library';

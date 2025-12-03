@@ -3,7 +3,6 @@ package services
 import (
 	"backend/config"
 	"backend/database"
-	"backend/models"
 	"backend/utils"
 	"encoding/json"
 	"fmt"
@@ -332,8 +331,15 @@ func ExactMatchSearch(smiles string) (string, error) {
 	return res, nil
 }
 
+type indexData struct {
+	ID        string  `gorm:"column:ID;type:VARCHAR(12);primaryKey;not null" json:"id"`
+	ItemName  *string `gorm:"column:ItemName;type:TEXT" json:"item_name,omitempty"`
+	SMILES    *string `gorm:"column:SMILES;type:TEXT" json:"smiles,omitempty"`
+	CASNumber *string `gorm:"column:CAS_number;type:VARCHAR(100)" json:"cas_number,omitempty"`
+}
+
 // FilterCompounds 筛选化合物 - 根据ItemType、分子量范围、Description和Source进行筛选，支持数组参数
-func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descriptions []string, sources []string, limit, offset int) ([]models.PublicData, int64, error) {
+func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descriptions []string, sources []string, limit, offset int) ([]indexData, int64, error) {
 	// 构建查询条件
 	query := database.GetDB().Table("data")
 
@@ -423,7 +429,7 @@ func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descripti
 	}
 
 	// 应用分页并获取数据
-	var compounds []models.PublicData
+	var compounds []indexData
 	result = query.Offset(offset).Limit(limit).Find(&compounds)
 	if result.Error != nil {
 		utils.LogError(result.Error)

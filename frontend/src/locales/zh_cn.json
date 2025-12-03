@@ -5,7 +5,8 @@
         "home": "首页",
         "browse": "浏览",
         "query": "查询",
-        "help": "帮助"
+        "about": "关于",
+        "superadmin": "超级管理员"
     },
     "browse": {
         "title": "筛选化合物",
@@ -47,7 +48,8 @@
         "tag": "标签",
         "structure": "结构",
         "created_at": "创建时间",
-        "updated_at": "更新时间"
+        "updated_at": "更新时间",
+        "weight": "分子量"
     },
     "compound_card": {
         "details": "查看详情"
@@ -142,5 +144,82 @@
                 "button": "开始查询"
             }
         }
+    },
+    "auth": {
+        "login": "登录",
+        "logout": "退出",
+        "passkey": "通行密钥",
+        "enter_passkey": "请输入通行密钥",
+        "submit": "提交",
+        "cancel": "取消",
+        "logging_in": "登录中...",
+        "login_success": "登录成功",
+        "login_failed": "登录失败",
+        "invalid_passkey": "无效的通行密钥",
+        "auth_required": "需要认证",
+        "auth_description": "请输入通行密钥以访问高级功能"
+    },
+    "superadmin": {
+        "title": "超级管理员面板",
+        "description": "管理所有通行密钥和用户权限",
+        "create_passkey": "创建通行密钥",
+        "refresh": "刷新",
+        "loading": "加载中...",
+        "retry": "重试",
+        "passkey_list": "通行密钥列表",
+        "passkey": "通行密钥",
+        "description": "描述",
+        "operator": "操作者",
+        "created_at": "创建时间",
+        "status": "状态",
+        "creator": "创建者",
+        "actions": "操作",
+        "copy": "复制",
+        "active": "激活",
+        "inactive": "禁用",
+        "edit": "编辑",
+        "deactivate": "禁用",
+        "activate": "激活",
+        "delete": "删除",
+        "no_passkeys": "暂无通行密钥",
+        "edit_passkey": "编辑通行密钥",
+        "operator_placeholder": "请输入操作者名称",
+        "description_placeholder": "请输入描述信息",
+        "cancel": "取消",
+        "update": "更新",
+        "create": "创建",
+        "copied": "已复制到剪贴板",
+        "copy_failed": "复制失败",
+        "fetch_failed": "获取数据失败",
+        "network_error": "网络错误",
+        "create_success": "创建成功",
+        "create_failed": "创建失败",
+        "update_success": "更新成功",
+        "update_failed": "更新失败",
+        "delete_confirm": "确定要删除这个通行密钥吗？",
+        "delete_success": "删除成功",
+        "delete_failed": "删除失败",
+        "toggle_success": "状态切换成功",
+        "toggle_failed": "状态切换失败"
+    },
+    "about": {
+        "title": "关于 MNPLib",
+        "subtitle": "探索海洋天然产物数据库的使命与愿景",
+        "what_is_mnplib": "什么是 MNPLib？",
+        "description": "MNPLib 是一个深海天然产物及其衍生物的综合数据库，由国家重点研发计划资助，提供化学结构、来源、生物活性、NMR 和 MS 数据的集成信息。",
+        "feature1": "全面的海洋化合物数据库",
+        "feature2": "先进的化学结构查询功能",
+        "feature3": "RDKit 化学信息学集成",
+        "mission_title": "我们的使命",
+        "mission_description": "为科研人员提供高质量、可访问的海洋天然产物数据，推动药物发现和化学生物学研究。",
+        "vision_title": "我们的愿景",
+        "vision_description": "成为全球领先的海洋天然产物信息资源平台，连接化学、生物学和药学研究社区。",
+        "tech_stack_title": "技术栈",
+        "team_title": "团队介绍",
+        "team_description": "我们的团队由化学家、生物学家、数据科学家和软件工程师组成，致力于提供最优质的数据库服务。",
+        "contact_title": "联系我们",
+        "contact_description": "如果您有任何问题、建议或合作意向，请随时与我们联系。",
+        "contact_email": "发送邮件",
+        "contact_github": "GitHub"
     }
 }

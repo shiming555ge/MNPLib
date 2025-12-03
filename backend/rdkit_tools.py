@@ -21,9 +21,16 @@ def smiles_to_tanimoto(smiles):
 
 # 判断子结构
 def is_substructure(smarts_pattern, smiles):
+    # 首先尝试直接匹配
     patt = Chem.MolFromSmarts(smarts_pattern)
     mol = Chem.MolFromSmiles(smiles)
-    return mol.HasSubstructMatch(patt)
+    if patt is None or mol is None:
+        return False
+    
+    if mol.HasSubstructMatch(patt):
+        return True
+    
+    return False
 
 # 批量相似度搜索
 # library [{id:,fp:}]
@@ -38,13 +45,25 @@ def similarity_search(qfp, library, threshold=0.5):
 # 批量子结构搜索
 # library 现在是包含id和smiles的字典列表
 def substructure_search(pattern_smarts, library):
+    # 首先尝试直接解析SMARTS模式
     patt = Chem.MolFromSmarts(pattern_smarts)
+    if patt is None:
+        return []  # 无效的SMARTS模式
+    
     result = []
     for item in library:
         smiles = item['smiles']
+        if not smiles:
+            continue
+            
         mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            continue
+            
+        # 尝试匹配
         if mol.HasSubstructMatch(patt):
             result.append(item['id'])
+    
     return result
 
 # 精确匹配搜索 - 使用RDKit进行化学等价性比较

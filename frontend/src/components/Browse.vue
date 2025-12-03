@@ -53,7 +53,7 @@ const fetchOptions = async () => {
   }
 };
 
-// 2. 核心：获取数据 (解决数组传参问题)
+// 2. 获取数据 
 const fetchCompounds = async (page = 1) => {
   loading.value = true;
   try {
@@ -63,8 +63,6 @@ const fetchCompounds = async (page = 1) => {
     params.append('limit', itemsPerPage.value);
     params.append('offset', (page - 1) * itemsPerPage.value);
     
-    // --- 关键：数组参数处理 ---
-    // 遍历数组，生成 ?item_type=A&item_type=B 格式
     if (filters.value.item_type && filters.value.item_type.length) {
       filters.value.item_type.forEach(val => params.append('item_type', val));
     }
@@ -73,7 +71,7 @@ const fetchCompounds = async (page = 1) => {
       filters.value.description.forEach(val => params.append('description', val));
     }
     
-    // 新增source筛选参数
+    // source筛选参数
     if (filters.value.source && filters.value.source.length) {
       filters.value.source.forEach(val => params.append('source', val));
     }

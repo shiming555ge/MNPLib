@@ -47,8 +47,18 @@ func JWTAuth() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			// 获取用户信息
+			passkey, _ := claims["passkey"].(string)
+			operator, _ := claims["operator"].(string)
+			description, _ := claims["description"].(string)
+
+			// 记录访问日志
+			utils.LogAccess(passkey, operator, description, c.Request.Method, c.Request.URL.Path, c.ClientIP())
+
 			// 将用户信息存储到上下文中
-			c.Set("passkey", claims["passkey"])
+			c.Set("passkey", passkey)
+			c.Set("operator", operator)
+			c.Set("description", description)
 			c.Next()
 		} else {
 			utils.JsonErrorResponse(c, http.StatusUnauthorized, "令牌无效")

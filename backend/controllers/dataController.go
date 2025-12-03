@@ -91,11 +91,11 @@ func GetDataByID(c *gin.Context) {
 		return
 	}
 
-	var data models.Data
+	var data models.PublicData
 	db := database.GetDB()
 
 	// 查询数据
-	result := db.Where("ID = ?", id).First(&data)
+	result := db.Table("data").Where("ID = ?", id).First(&data)
 	if result.Error != nil {
 		if result.Error.Error() == "record not found" {
 			utils.JsonErrorResponse(c, 200404, "数据不存在")

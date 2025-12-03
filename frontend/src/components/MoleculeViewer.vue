@@ -4,6 +4,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const props = defineProps({
+  id: {
+    type: String,
+    default: ''
+  },
   smiles: {
     type: String,
     default: ''
@@ -35,30 +39,76 @@ let moleculeGroup = null;
 
 // 原子颜色映射
 const atomColors = {
-  'C': 0x909090, // 碳 - 灰色
-  'H': 0xffffff, // 氢 - 白色
-  'O': 0xff0000, // 氧 - 红色
-  'N': 0x0000ff, // 氮 - 蓝色
-  'S': 0xffff00, // 硫 - 黄色
-  'P': 0xff8000, // 磷 - 橙色
-  'F': 0x00ff00, // 氟 - 绿色
-  'Cl': 0x00ff00, // 氯 - 绿色
-  'Br': 0x800000, // 溴 - 深红色
-  'I': 0x800080  // 碘 - 紫色
+  "C": 0x909090,      // 碳 - 深灰色
+  "H": 0xFFFFFF,      // 氢 - 白色
+  "O": 0xFF0D0D,      // 氧 - 亮红色
+  "N": 0x304FF7,      // 氮 - 深蓝色
+  "S": 0xFFC832,      // 硫 - 金黄色
+  "P": 0xFF8000,      // 磷 - 橙色
+  "F": 0x90E050,      // 氟 - 浅绿色
+  "Cl": 0x1FF01F,     // 氯 - 绿色
+  "Br": 0xA62929,     // 溴 - 暗红色
+  "I": 0x940094,      // 碘 - 紫色
+  "Si": 0xF0C8A0,     // 硅 - 沙黄色
+  "B": 0xFFB5B5,      // 硼 - 淡红色
+  "Se": 0xFFA500,     // 硒 - 橙黄色
+  "Te": 0xD47A00,     // 碲 - 深橙色
+  "As": 0xBD80E3,     // 砷 - 淡紫色
+  "Li": 0xCC80FF,     // 锂 - 淡紫色
+  "Na": 0xAB5CF2,     // 钠 - 紫色
+  "K": 0x8F40D4,      // 钾 - 深紫色
+  "Mg": 0x8AFF00,     // 镁 - 亮绿色
+  "Ca": 0x3DFF00,     // 钙 - 鲜绿色
+  "Fe": 0xE06633,     // 铁 - 橙色棕色
+  "Zn": 0x7D80B0,     // 锌 - 蓝灰色
+  "Cu": 0xC88033,     // 铜 - 铜色
+  "Ni": 0x50D050,     // 镍 - 绿色
+  "Co": 0xF090A0,     // 钴 - 粉红色
+  "Mn": 0x9C7AC7,     // 锰 - 淡紫色
+  "Al": 0xBFA6A6,     // 铝 - 银灰色
+  "Pb": 0x575961,     // 铅 - 深灰色
+  "Sn": 0x668080,     // 锡 - 蓝灰色
+  "Pt": 0xD0D0E0,     // 铂 - 淡银色
+  "Au": 0xFFD123,     // 金 - 金色
+  "Ag": 0xC0C0C0,     // 银 - 银色
+  "Hg": 0xB8B8D0,     // 汞 - 浅灰色
 };
 
 // 原子半径映射 (单位: Å)
 const atomRadii = {
-  'C': 0.7,
-  'H': 0.3,
-  'O': 0.66,
-  'N': 0.65,
-  'S': 1.04,
-  'P': 1.0,
-  'F': 0.57,
-  'Cl': 1.0,
-  'Br': 1.14,
-  'I': 1.33
+  "C": 0.7,
+  "H": 0.3,
+  "O": 0.66,
+  "N": 0.65,
+  "S": 1.04,
+  "P": 1.0,
+  "F": 0.57,
+  "Cl": 1.0,
+  "Br": 1.14,
+  "I": 1.33,
+  "Si": 1.11,
+  "B": 0.84,
+  "Se": 1.17,
+  "Te": 1.37,
+  "As": 1.19,
+  "Li": 1.52,
+  "Na": 1.86,
+  "K": 2.27,
+  "Mg": 1.60,
+  "Ca": 1.97,
+  "Fe": 1.24,
+  "Zn": 1.25,
+  "Cu": 1.28,
+  "Ni": 1.24,
+  "Co": 1.25,
+  "Mn": 1.37,
+  "Al": 1.43,
+  "Pb": 1.75,
+  "Sn": 1.45,
+  "Pt": 1.30,
+  "Au": 1.34,
+  "Ag": 1.44,
+  "Hg": 1.55
 };
 
 // 键半径
@@ -232,8 +282,23 @@ const parsePDB = (pdbContent) => {
 };
 
 /** 从API获取PDB数据 */
-const fetchPDBFromAPI = async (smiles) => {
+const fetchPDBFromAPI = async (id, smiles) => {
   try {
+    const response = await fetch(`/api/data/${id}/structure`);
+    
+    if (!response.ok) {
+      throw new Error(`API请求失败: ${response.status}`);
+    }
+    
+    const result = await response.json()
+    console.log('API响应结果:', result)
+    
+    // 处理API响应格式    
+    return result.data.structure
+  } catch (error) {
+    console.error('获取PDB数据失败:', error);
+    console.log('尝试计算PDB数据');
+    try {
     const response = await fetch(`/api/rdkit/smiles-to-pdb?smiles=${encodeURIComponent(smiles)}`);
     
     if (!response.ok) {
@@ -247,16 +312,18 @@ const fetchPDBFromAPI = async (smiles) => {
     if (result.code === 200200 && result.data) {
       return result.data
     }
-  } catch (error) {
-    console.error('获取PDB数据失败:', error);
-    throw error;
+    } catch (error) {
+      console.error('获取PDB数据失败:', error);
+      throw error;
+    }
   }
+  
 };
 
 /** 生成3D分子结构 */
-const generate3DStructure = async (smiles) => {
+const generate3DStructure = async (id, smiles) => {
   // 从API获取真实的3D结构
-  const pdbData = await fetchPDBFromAPI(smiles);
+  const pdbData = await fetchPDBFromAPI(id, smiles);
   console.log('获取到的PDB数据:', pdbData);
   
   // 解析PDB数据
@@ -282,7 +349,7 @@ const render3DStructure = async () => {
     initScene();
     
     // 生成3D结构
-    const structure = await generate3DStructure(props.smiles);
+    const structure = await generate3DStructure(props.id, props.smiles);
     
     // 清除现有分子
     moleculeGroup.clear();

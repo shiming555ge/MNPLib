@@ -47,6 +47,21 @@ func Log(msg string) {
 	fmt.Println(msg) // 添加调试信息
 }
 
+// LogAccess 记录访问日志
+func LogAccess(passkey, operator, description, method, path, clientIP string) {
+	logMsg := fmt.Sprintf("访问记录 - Passkey: %s, Operator: %s, Description: %s, Method: %s, Path: %s, IP: %s",
+		passkey, operator, description, method, path, clientIP)
+	logger.Info().Time("time", time.Now()).
+		Str("passkey", passkey).
+		Str("operator", operator).
+		Str("description", description).
+		Str("method", method).
+		Str("path", path).
+		Str("client_ip", clientIP).
+		Msg("Protected data access")
+	fmt.Println(logMsg) // 添加调试信息
+}
+
 // GetLogger 返回初始化的 logger
 func GetLogger() zerolog.Logger {
 	return logger

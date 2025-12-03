@@ -140,6 +140,149 @@
   }
   ```
 
+#### 验证登录状态
+- **URL**: `GET /api/auth/verify`
+- **描述**: 验证JWT token是否有效（中间件已验证），返回成功状态
+- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`
+- **响应**: 成功状态
+  ```json
+  {
+    "code": 200,
+    "message": "success"
+  }
+  ```
+
+#### 验证是否可以修改passkey
+- **URL**: `GET /api/auth/verify-passkey-modifiable`
+- **描述**: 验证当前用户是否有权限修改passkey（中间件已验证Extends字段为空），返回成功状态
+- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
+- **响应**: 成功状态
+  ```json
+  {
+    "code": 200,
+    "message": "success"
+  }
+  ```
+
+### Passkey 管理 API
+
+#### 获取所有 passkey
+- **URL**: `GET /api/passkeys`
+- **描述**: 获取所有 passkey 列表，需要管理员权限。注意：不会返回当前登录用户自己的 passkey
+- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
+- **响应**: 
+  ```json
+  [
+    {
+      "passkey": "uuid-string",
+      "description": "passkey描述",
+      "operator": "操作者",
+      "created_at": "2023-01-01T00:00:00Z",
+      "is_active": true,
+      "extends": "创建者operator(passkey)"
+    }
+  ]
+  ```
+
+#### 创建 passkey
+- **URL**: `POST /api/passkeys`
+- **描述**: 创建新的 passkey，系统会自动生成 UUID。创建者的 operator(passkey) 信息会被存储在 Extends 字段中
+- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
+- **请求体**:
+  ```json
+  {
+    "description": "passkey描述",
+    "operator": "操作者",
+    "is_active": true
+  }
+  ```
+- **响应**: 创建的 passkey 信息
+  ```json
+  {
+    "passkey": "uuid-string",
+    "description": "passkey描述",
+    "operator": "操作者",
+    "created_at": "2023-01-01T00:00:00Z",
+    "is_active": true,
+    "extends": "创建者operator(passkey)"
+  }
+  ```
+
+#### 获取单个 passkey
+- **URL**: `GET /api/passkeys/{passkey}`
+- **描述**: 根据 passkey UUID 获取单个 passkey 的详细信息
+- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
+- **参数**:
+  - `passkey` (路径参数): passkey UUID
+- **响应**: 单个 passkey 信息
+  ```json
+  {
+    "passkey": "uuid-string",
+    "description": "passkey描述",
+    "operator": "操作者",
+    "created_at": "2023-01-01T00:00:00Z",
+    "is_active": true,
+    "extends": "创建者operator(passkey)"
+  }
+  ```
+
+#### 更新 passkey
+- **URL**: `PUT /api/passkeys/{passkey}`
+- **描述**: 更新指定 passkey 的信息。注意：不能修改自己的 passkey
+- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
+- **参数**:
+  - `passkey` (路径参数): passkey UUID
+- **请求体**:
+  ```json
+  {
+    "description": "更新后的描述",
+    "operator": "更新后的操作者",
+    "is_active": true
+  }
+  ```
+- **响应**: 更新后的 passkey 信息
+  ```json
+  {
+    "passkey": "uuid-string",
+    "description": "更新后的描述",
+    "operator": "更新后的操作者",
+    "created_at": "2023-01-01T00:00:00Z",
+    "is_active": true,
+    "extends": "创建者operator(passkey)"
+  }
+  ```
+
+#### 删除 passkey
+- **URL**: `DELETE /api/passkeys/{passkey}`
+- **描述**: 删除指定的 passkey。注意：不能删除自己的 passkey
+- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
+- **参数**:
+  - `passkey` (路径参数): passkey UUID
+- **响应**: 成功消息
+  ```json
+  {
+    "message": "删除成功"
+  }
+  ```
+
+#### 切换 passkey 状态
+- **URL**: `POST /api/passkeys/{passkey}/toggle`
+- **描述**: 启用或禁用指定的 passkey。注意：不能修改自己的 passkey 状态
+- **认证**: 需要在请求头中添加 `Authorization: Bearer <token>`，并且用户的 Extends 字段必须为空（即管理员权限）
+- **参数**:
+  - `passkey` (路径参数): passkey UUID
+- **响应**: 状态切换后的 passkey 信息
+  ```json
+  {
+    "passkey": "uuid-string",
+    "description": "passkey描述",
+    "operator": "操作者",
+    "created_at": "2023-01-01T00:00:00Z",
+    "is_active": false,
+    "extends": "创建者operator(passkey)"
+  }
+  ```
+
 ### RDKit 化学计算 API
 
 #### 获取RDKit服务状态
