@@ -72,6 +72,9 @@ const images = [
 const currentIndex = ref(1);
 let timer = null;
 
+// 跟踪已加载的图片
+const loadedImages = ref(new Set());
+
 // Fetch statistics data from API
 const fetchStatistics = async () => {
   loading.value = true;
@@ -136,22 +139,54 @@ const statistics = computed(() => [
   }
 ]);
 
-// 图片预加载函数
+// 改进的图片预加载函数，返回Promise并跟踪加载状态
 const preloadImages = (imageUrls) => {
-  imageUrls.forEach(url => {
-    const img = new Image();
-    img.src = url;
+  const promises = imageUrls.map(url => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        loadedImages.value.add(url);
+        resolve(url);
+      };
+      img.onerror = () => {
+        console.warn(`Failed to load image: ${url}`);
+        // 即使加载失败，也标记为已尝试加载
+        loadedImages.value.add(url);
+        resolve(url); // 不reject，继续执行
+      };
+      img.src = url;
+    });
   });
+  return Promise.all(promises);
 };
 
-onMounted(() => {
-  // 预加载所有图片
-  preloadImages(images);
+// 图片加载状态
+const imagesLoaded = ref(false);
+
+// 检查图片是否已加载
+const isImageLoaded = (url) => {
+  return loadedImages.value.has(url);
+};
+
+onMounted(async () => {
+  try {
+    // 预加载所有图片，等待加载完成
+    await preloadImages(images);
+    imagesLoaded.value = true;
+    console.log('All images preloaded successfully');
+  } catch (error) {
+    console.error('Error preloading images:', error);
+    // 即使预加载失败，也继续显示，但标记为已加载
+    imagesLoaded.value = true;
+  }
   
-  // Start image rotation timer
-  timer = setInterval(() => {
-    currentIndex.value = (currentIndex.value + 1) % images.length;
-  }, 3000);
+  // 延迟启动图片轮播，确保图片完全加载
+  setTimeout(() => {
+    // Start image rotation timer - 增加间隔时间，让过渡更完整
+    timer = setInterval(() => {
+      currentIndex.value = (currentIndex.value + 1) % images.length;
+    }, 4000); // 增加到4秒，让过渡更完整
+  }, 500); // 延迟500ms，确保过渡平滑
   
   // Fetch statistics data
   fetchStatistics();
@@ -161,18 +196,39 @@ onBeforeUnmount(() => {
   if (timer) clearInterval(timer);
 });
 
-const prevIndex = computed(() => (currentIndex.value - 1 + images.length) % images.length);
-const nextIndex = computed(() => (currentIndex.value + 1) % images.length);
+// 使用更高效的图片切换逻辑 - 始终设置backgroundImage，避免布局重计算
+const leftStyle = computed(() => {
+  const index = (currentIndex.value - 1 + images.length) % images.length;
+  const url = images[index];
+  const loaded = isImageLoaded(url);
+  // 始终设置backgroundImage，但通过opacity控制显示
+  return {
+    backgroundImage: `url(${url})`,
+    opacity: loaded ? 0.9 : 0,
+    backgroundColor: loaded ? 'transparent' : '#f8f9fa'
+  };
+});
 
-const leftStyle = computed(() => ({
-  backgroundImage: `url(${images[prevIndex.value]})`
-}));
-const centerStyle = computed(() => ({
-  backgroundImage: `url(${images[currentIndex.value]})`
-}));
-const rightStyle = computed(() => ({
-  backgroundImage: `url(${images[nextIndex.value]})`
-}));
+const centerStyle = computed(() => {
+  const url = images[currentIndex.value];
+  const loaded = isImageLoaded(url);
+  return {
+    backgroundImage: `url(${url})`,
+    opacity: loaded ? 1 : 0,
+    backgroundColor: loaded ? 'transparent' : '#f8f9fa'
+  };
+});
+
+const rightStyle = computed(() => {
+  const index = (currentIndex.value + 1) % images.length;
+  const url = images[index];
+  const loaded = isImageLoaded(url);
+  return {
+    backgroundImage: `url(${url})`,
+    opacity: loaded ? 0.9 : 0,
+    backgroundColor: loaded ? 'transparent' : '#f8f9fa'
+  };
+});
 
 // Get appropriate icon for each statistic
 const getStatIcon = (key) => {
@@ -229,9 +285,12 @@ const getStatIcon = (key) => {
   border-radius: 16px;
   background-size: cover;
   background-position: center;
-  transition: all 1s ease;
+  background-repeat: no-repeat;
+  transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1), background-size 0.5s ease, opacity 0.8s ease;
   box-shadow: 0 10px 40px rgba(0,0,0,0.45);
   opacity: 0.9;
+  background-color: #f8f9fa; /* 添加默认背景色，避免空白 */
+  will-change: transform, opacity, filter, background-size; /* 提示浏览器优化 */
 }
 
 .gallery-img.left {
@@ -240,6 +299,7 @@ const getStatIcon = (key) => {
   height: 55%; /* 减小高度 */
   filter: blur(4px) brightness(0.55);
   transform: translateY(-50%) scale(0.85);
+  transition-delay: 0.1s; /* 左侧图片延迟切换，创造层次感 */
 }
 
 .gallery-img.right {
@@ -248,6 +308,7 @@ const getStatIcon = (key) => {
   height: 55%; /* 减小高度 */
   filter: blur(4px) brightness(0.55);
   transform: translateY(-50%) scale(0.85);
+  transition-delay: 0.2s; /* 右侧图片更晚切换 */
 }
 
 .gallery-img.center {
@@ -258,6 +319,8 @@ const getStatIcon = (key) => {
   opacity: 1;
   border-radius: 20px;
   box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+  transition-duration: 1.5s; /* 中央图片过渡时间更长 */
+  transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1); /* 更弹性的缓动函数 */
 }
 
 h1.display-4 {
@@ -267,15 +330,15 @@ h1.display-4 {
   margin-bottom: 1.5rem !important;
 }
 
-/* subtle fade-in animation */
-.gallery-img {
+/* 移除冲突的fadeIn动画，使用transition代替 */
+/* .gallery-img {
   animation: fadeIn 1.2s ease;
 }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-50%) scale(0.95); }
   to { opacity: 1; transform: translateY(-50%) scale(1); }
-}
+} */
 
 /* Statistics cards hover effects */
 .statistics-card {
