@@ -72,8 +72,9 @@ const images = [
 const currentIndex = ref(1);
 let timer = null;
 
-// 跟踪已加载的图片
+// 跟踪已加载的图片和对应的Image对象
 const loadedImages = ref(new Set());
+const imageCache = ref(new Map()); // 存储Image对象
 
 // Fetch statistics data from API
 const fetchStatistics = async () => {
@@ -139,19 +140,26 @@ const statistics = computed(() => [
   }
 ]);
 
-// 改进的图片预加载函数，返回Promise并跟踪加载状态
+// 改进的图片预加载函数，返回Promise并跟踪加载状态，使用缓存
 const preloadImages = (imageUrls) => {
   const promises = imageUrls.map(url => {
+    // 如果已经在缓存中，直接返回
+    if (imageCache.value.has(url)) {
+      return Promise.resolve(url);
+    }
+    
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
         loadedImages.value.add(url);
+        imageCache.value.set(url, img); // 缓存Image对象
         resolve(url);
       };
       img.onerror = () => {
         console.warn(`Failed to load image: ${url}`);
         // 即使加载失败，也标记为已尝试加载
         loadedImages.value.add(url);
+        imageCache.value.set(url, img); // 仍然缓存，即使加载失败
         resolve(url); // 不reject，继续执行
       };
       img.src = url;
@@ -196,26 +204,34 @@ onBeforeUnmount(() => {
   if (timer) clearInterval(timer);
 });
 
-// 使用更高效的图片切换逻辑 - 始终设置backgroundImage，避免布局重计算
+// 使用更高效的图片切换逻辑 - 避免重复下载
 const leftStyle = computed(() => {
   const index = (currentIndex.value - 1 + images.length) % images.length;
   const url = images[index];
   const loaded = isImageLoaded(url);
-  // 始终设置backgroundImage，但通过opacity控制显示
-  return {
+  // 只有图片已加载时才设置backgroundImage
+  return loaded ? {
     backgroundImage: `url(${url})`,
-    opacity: loaded ? 0.9 : 0,
-    backgroundColor: loaded ? 'transparent' : '#f8f9fa'
+    opacity: 0.9,
+    backgroundColor: 'transparent'
+  } : {
+    backgroundImage: 'none',
+    opacity: 0,
+    backgroundColor: '#f8f9fa'
   };
 });
 
 const centerStyle = computed(() => {
   const url = images[currentIndex.value];
   const loaded = isImageLoaded(url);
-  return {
+  return loaded ? {
     backgroundImage: `url(${url})`,
-    opacity: loaded ? 1 : 0,
-    backgroundColor: loaded ? 'transparent' : '#f8f9fa'
+    opacity: 1,
+    backgroundColor: 'transparent'
+  } : {
+    backgroundImage: 'none',
+    opacity: 0,
+    backgroundColor: '#f8f9fa'
   };
 });
 
@@ -223,10 +239,14 @@ const rightStyle = computed(() => {
   const index = (currentIndex.value + 1) % images.length;
   const url = images[index];
   const loaded = isImageLoaded(url);
-  return {
+  return loaded ? {
     backgroundImage: `url(${url})`,
-    opacity: loaded ? 0.9 : 0,
-    backgroundColor: loaded ? 'transparent' : '#f8f9fa'
+    opacity: 0.9,
+    backgroundColor: 'transparent'
+  } : {
+    backgroundImage: 'none',
+    opacity: 0,
+    backgroundColor: '#f8f9fa'
   };
 });
 
