@@ -60,7 +60,8 @@ type PublicData struct {
 	CASNumber   *string    `gorm:"column:CAS_number;type:VARCHAR(127)" json:"cas_number,omitempty"`
 	ItemTag     *string    `gorm:"column:ItemTag;type:VARCHAR(255)" json:"item_tag,omitempty"`
 	Structure   *string    `gorm:"column:Structure;type:TEXT" json:"structure,omitempty"`
-	MS1         *float64   `gorm:"column:MS1;type:DOUBLE" json:"ms1,omitempty"`
+	MS1_H       *float64   `gorm:"column:MS1_H;type:DOUBLE" json:"ms1_h,omitempty"`
+	MS1_Na      *float64   `gorm:"column:MS1_Na;type:DOUBLE" json:"ms1_na,omitempty"`
 	Weight      *float32   `gorm:"column:Weight;type:FLOAT" json:"weight,omitempty"`
 	FP          *string    `gorm:"column:FP;type:VARCHAR(255)" json:"fp,omitempty"`
 	CreatedAt   *time.Time `gorm:"column:Created_At" json:"created_at,omitempty"`
@@ -69,7 +70,8 @@ type PublicData struct {
 
 // 定义只包含保护字段的结构
 type ProtectedData struct {
-	MS2          *string `json:"ms2,omitempty"`
+	MS2 *string `json:"ms2,omitempty"`
+	//MS2_full     *string `json:"ms2_full,omitempty"`
 	Bioactivity  *string `json:"bioactivity,omitempty"`
 	NMR_13C_data *string `json:"nmr_13c_data,omitempty"`
 }

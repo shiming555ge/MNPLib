@@ -308,6 +308,34 @@ func GetDataByIDFull(c *gin.Context) {
 	utils.JsonSuccessResponse(c, data)
 }
 
+func GetMS2FullByID(c *gin.Context) {
+	// 获取路径参数
+	id := c.Param("id")
+	if id == "" {
+		utils.JsonErrorResponse(c, 200400, "参数id不能为空")
+		return
+	}
+
+	var data string
+	db := database.GetDB()
+
+	// 查询数据，只选择需要的字段
+	result := db.Table("data").
+		Select("MS2_full").
+		Where("ID = ?", id).
+		First(&data)
+	if result.Error != nil {
+		if result.Error.Error() == "record not found" {
+			utils.JsonErrorResponse(c, 200404, "数据不存在")
+		} else {
+			utils.JsonErrorResponse(c, 200500, "查询数据失败")
+		}
+		return
+	}
+
+	utils.JsonSuccessResponse(c, data)
+}
+
 // GetSources 获取所有Source分类
 // @Summary 获取Source分类
 // @Description 返回所有可用的Source分类
