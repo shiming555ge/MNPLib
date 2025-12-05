@@ -140,7 +140,7 @@ func GetDataStatistics(c *gin.Context) {
 	db.Model(&models.Data{}).Where("Bioactivity IS NOT NULL AND Bioactivity != ''").Count(&stats.BioactivityData)
 
 	// 获取质谱数据量（MS1或MS2不为空的数量）
-	db.Model(&models.Data{}).Where("MS1 IS NOT NULL OR MS2 IS NOT NULL AND MS2 != ''").Count(&stats.MSData)
+	db.Model(&models.Data{}).Where("MS1_H IS NOT NULL OR MS2 IS NOT NULL AND MS2 != ''").Count(&stats.MSData)
 
 	// 获取核磁数据量（NMR_13C_data不为空的数量）
 	db.Model(&models.Data{}).Where("NMR_13C_data IS NOT NULL AND NMR_13C_data != ''").Count(&stats.NMRData)
