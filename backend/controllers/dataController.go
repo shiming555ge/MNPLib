@@ -316,13 +316,16 @@ func GetMS2FullByID(c *gin.Context) {
 		return
 	}
 
-	var data string
+	var data struct {
+		MS2_full string
+	}
 	db := database.GetDB()
 
 	// 查询数据，只选择需要的字段
 	result := db.Table("data").
 		Select("MS2_full").
 		Where("ID = ?", id).
+		Order("ID").
 		First(&data)
 	if result.Error != nil {
 		if result.Error.Error() == "record not found" {
@@ -333,7 +336,7 @@ func GetMS2FullByID(c *gin.Context) {
 		return
 	}
 
-	utils.JsonSuccessResponse(c, data)
+	utils.JsonSuccessResponse(c, data.MS2_full)
 }
 
 // GetSources 获取所有Source分类
@@ -373,7 +376,9 @@ func GetStructure(c *gin.Context) {
 	}
 	// 定义只包含Structure的结构
 
-	var data string
+	var data struct {
+		Structure string
+	}
 	db := database.GetDB()
 
 	// 查询数据，只选择需要的字段
@@ -390,5 +395,5 @@ func GetStructure(c *gin.Context) {
 		return
 	}
 
-	utils.JsonSuccessResponse(c, data)
+	utils.JsonSuccessResponse(c, data.Structure)
 }

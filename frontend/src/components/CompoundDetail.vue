@@ -39,9 +39,15 @@ const copyToClipboard = async (text) => {
   }
 }
 
-const clickToDownload = async (type) => {  
+const clickToDownload = async (type, filename = null) => {  
   try {
-    axios.get(`/api/data/${props.compound.id}/${type}`).then(res => {
+    // 准备请求头，如果需要认证的话
+    const headers = {
+      'Content-Type': 'application/json',
+      ...getAuthHeader()
+    };
+    
+    axios.get(`/api/data/${props.compound.id}/${type}`, { headers }).then(res => {
       const text = res.data; // 后端返回的纯文本
       
       const blob = new Blob([text], {
@@ -51,7 +57,7 @@ const clickToDownload = async (type) => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = props.compound.id+'.log';   // 保存的文件名
+      link.download = filename || `${props.compound.id}.${type === 'structure' ? 'mol' : 'log'}`;   // 保存的文件名
       link.click();
 
       window.URL.revokeObjectURL(url);
@@ -268,8 +274,13 @@ onUnmounted(() => {
         
         <!-- 绘制分子结构 -->
         <div class="card mb-3">
-          <div class="card-header bg-primary text-white">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h6 class="card-title mb-0"><i class="bi bi-info-circle"></i> {{ t('details.structure') }}</h6>
+            <div>
+              <i class="bi bi-download me-2" style="cursor: pointer;" 
+                 @click="clickToDownload('structure', `${detailedData.id}.mol`)"
+                 :title="t('details.click2download')"></i>
+            </div>
           </div>
           <div class="card-body text-center">
             <MoleculeViewer 
@@ -320,7 +331,18 @@ onUnmounted(() => {
                 </p>
                 <p>
                   <strong>{{ t('details.weight') }}:</strong> 
-                  {{ detailedData.weight || 'N/A' }}
+                  <span 
+                    class="copyable-text" 
+                    :title="detailedData.weight || 'N/A'"
+                    @click="copyToClipboard(detailedData.weight)"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ detailedData.weight || 'N/A' }}
+                  </span>
+                  <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
+                     @click="copyToClipboard(detailedData.weight)"
+                     :title="t('details.click2copy')"></i>
                 </p>
               </div>
               <div class="col-md-12">
@@ -390,69 +412,110 @@ onUnmounted(() => {
             <h6 class="card-title mb-0"><i class="bi bi-graph-up"></i> {{ t('details.analysis_data') }}</h6>
           </div>
           <div class="card-body">
-            <div class="row">
+            <!-- MS1-H 和 MS1-Na 同行显示 -->
+            <div class="row mb-3">
               <div class="col-md-6">
-                <p>
-                  <strong>MS1-H:</strong> 
+                <div class="d-flex align-items-center">
+                  <strong class="me-2">MS1-H:</strong>
                   <span 
+                    class="copyable-text flex-grow-1"
                     :title="detailedData.ms1_h || 'N/A'"
+                    @click="copyToClipboard(detailedData.ms1_h)"
                     data-bs-toggle="tooltip" 
                     data-bs-placement="top"
                   >
-                    {{ truncateText(detailedData.ms1_h, 25) || 'N/A' }}
+                    {{ detailedData.ms1_h || 'N/A' }}
                   </span>
-                </p>
-                <p>
-                  <strong>MS1-Na:</strong> 
-                  <span 
-                    :title="detailedData.ms1_na || 'N/A'"
-                    data-bs-toggle="tooltip" 
-                    data-bs-placement="top"
-                  >
-                    {{ truncateText(detailedData.ms1_na, 25) || 'N/A' }}
-                  </span>
-                </p>
-                <p>
-                  <strong>MS2:</strong> 
-                  <span v-if="isAuthenticated" class="text-muted">{{ t("details.not_auth") }}</span>
-                  <span v-else-if="protectedData" 
-                    :title="protectedData.ms2"
-                    @click="clickToDownload('ms2-full')"
-                    data-bs-toggle="tooltip" 
-                    data-bs-placement="top"
-                  >
-                    {{ truncateText(protectedData.ms2, 25) }}
-                    <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
-                     @click="clickToDownload('ms2-full')"
-                     :title="t('details.click2download')"></i>
-                </span>
-                </p>
+                  <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
+                     @click="copyToClipboard(detailedData.ms1_h)"
+                     :title="t('details.click2copy')"></i>
+                </div>
               </div>
               <div class="col-md-6">
-                <p>
-                  <strong>C13-NMR:</strong> 
-                  <span v-if="isAuthenticated" class="text-muted">{{ t("details.not_auth") }}</span>
-                  <span v-else-if="protectedData"
-                    :title="protectedData.nmr_13c_data"
+                <div class="d-flex align-items-center">
+                  <strong class="me-2">MS1-Na:</strong>
+                  <span 
+                    class="copyable-text flex-grow-1"
+                    :title="detailedData.ms1_na || 'N/A'"
+                    @click="copyToClipboard(detailedData.ms1_na)"
                     data-bs-toggle="tooltip" 
                     data-bs-placement="top"
                   >
-                    {{ truncateText(protectedData.nmr_13c_data, 25) }}
+                    {{ detailedData.ms1_na || 'N/A' }}
                   </span>
-                  <span v-else>N/A</span>
-                </p>
-                <p>
-                  <strong>{{ t('details.bioactivity') }}:</strong> 
-                  <span v-if="isAuthenticated" class="text-muted">{{ t("details.not_auth") }}</span>
-                  <span v-else-if="protectedData"
-                    :title="protectedData.bioactivity"
-                    data-bs-toggle="tooltip" 
-                    data-bs-placement="top"
-                  >
-                    {{ truncateText(protectedData.bioactivity, 25) }}
-                  </span>
-                  <span v-else>N/A</span>
-                </p>
+                  <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
+                     @click="copyToClipboard(detailedData.ms1_na)"
+                     :title="t('details.click2copy')"></i>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Bioactivity 完整显示 -->
+            <div class="row mt-3">
+              <div class="col-12">
+                <div class="bioactivity-section p-3 bg-light rounded">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>{{ t('details.bioactivity') }}:</strong>
+                    <div>
+                      <i class="bi bi-clipboard text-muted small" style="cursor: pointer;" 
+                         @click="copyToClipboard(protectedData ? protectedData.bioactivity : '')"
+                         :title="t('details.click2copy')"></i>
+                    </div>
+                  </div>
+                  <div v-if="!isAuthenticated" class="text-muted">{{ t("details.not_auth") }}</div>
+                  <div v-else-if="protectedData && protectedData.bioactivity" 
+                       class="bioactivity-content p-2 bg-white rounded border">
+                    {{ truncateText(protectedData.bioactivity, 100) }}
+                  </div>
+                  <div v-else class="text-muted">N/A</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- C13-NMR 完整显示 -->
+            <div class="row mt-3">
+              <div class="col-12">
+                <div class="c13nmr-section p-3 bg-light rounded">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>C13-NMR:</strong>
+                    <div>
+                      <i class="bi bi-clipboard text-muted small" style="cursor: pointer;" 
+                         @click="copyToClipboard(protectedData ? protectedData.nmr_13c_data : '')"
+                         :title="t('details.click2copy')"></i>
+                    </div>
+                  </div>
+                  <div v-if="!isAuthenticated" class="text-muted">{{ t("details.not_auth") }}</div>
+                  <div v-else-if="protectedData && protectedData.nmr_13c_data" 
+                       class="c13nmr-content p-2 bg-white rounded border">
+                    {{ protectedData.nmr_13c_data }}
+                  </div>
+                  <div v-else class="text-muted">N/A</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- MS2 完整显示 -->
+            <div class="row mt-3">
+              <div class="col-12">
+                <div class="ms2-section p-3 bg-light rounded">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>MS2:</strong>
+                    <div>
+                      <i class="bi bi-download me-2 text-primary" style="cursor: pointer;" 
+                         @click="clickToDownload('ms2-full')"
+                         :title="t('details.click2download')"></i>
+                      <i class="bi bi-clipboard text-muted small" style="cursor: pointer;" 
+                         @click="copyToClipboard(protectedData ? protectedData.ms2 : '')"
+                         :title="t('details.click2copy')"></i>
+                    </div>
+                  </div>
+                  <div v-if="!isAuthenticated" class="text-muted">{{ t("details.not_auth") }}</div>
+                  <div v-else-if="protectedData && protectedData.ms2" 
+                       class="ms2-content p-2 bg-white rounded border">
+                    {{ protectedData.ms2 }}
+                  </div>
+                  <div v-else class="text-muted">N/A</div>
+                </div>
               </div>
             </div>
           </div>
