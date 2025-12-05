@@ -47,22 +47,48 @@ const clickToDownload = async (type, filename = null) => {
       ...getAuthHeader()
     };
     
-    axios.get(`/api/data/${props.compound.id}/${type}`, { headers }).then(res => {
-      const text = res.data; // 后端返回的纯文本
-      
-      const blob = new Blob([text], {
-        type: 'text/plain;charset=utf-8'
-      });
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename || `${props.compound.id}.${type === 'structure' ? 'mol' : 'log'}`;   // 保存的文件名
-      link.click();
-
-      window.URL.revokeObjectURL(url);
+    // 使用fetch API发送请求
+    const response = await fetch(`/api/data/${props.compound.id}/${type}`, { headers });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // 解析响应数据，后端返回的数据结构为 {msg, code, data}
+    const result = await response.json();
+    console.log(result)
+    
+    // 检查响应结构
+    if (result.code !== 200200 || !result.data) {
+      throw new Error(result.msg || '下载失败：数据为空');
+    }
+    
+    // 获取实际的数据内容
+    const dataContent = result.data;
+    
+    // 根据type确定文件扩展名
+    let extension = 'log'; // 默认扩展名
+    if (type === 'structure') {
+      extension = 'pdb'; // 结构文件保存为.pdb
+    } else if (type === 'ms2-full') {
+      extension = 'log'; // MS2数据保存为.log
+    }
+    // 可以根据需要添加其他type的扩展名映射
+    
+    // 创建Blob并下载
+    const blob = new Blob([dataContent], {
+      type: 'text/plain;charset=utf-8'
     });
 
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    // 使用指定的文件名或生成默认文件名：ID.扩展名
+    link.download = filename || `${props.compound.id}.${extension}`;
+    link.click();
+
+    window.URL.revokeObjectURL(url);
+    
     showToast(t("details.downloaded"))
   } catch (err) {
     console.error('下载失败:', err)
@@ -278,7 +304,7 @@ onUnmounted(() => {
             <h6 class="card-title mb-0"><i class="bi bi-info-circle"></i> {{ t('details.structure') }}</h6>
             <div>
               <i class="bi bi-download me-2" style="cursor: pointer;" 
-                 @click="clickToDownload('structure', `${detailedData.id}.mol`)"
+                 @click="clickToDownload('structure', `${detailedData.id}.pdb`)"
                  :title="t('details.click2download')"></i>
             </div>
           </div>
