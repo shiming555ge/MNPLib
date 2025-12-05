@@ -5,7 +5,7 @@ import MoleculeViewer from './MoleculeViewer.vue'
 import { useAuth } from '../composables/useAuth'
 
 const { t } = useI18n()
-const { isAuthenticated, getAuthHeader } = useAuth()
+const { isAuthenticated, getAuthHeader, isAdmin } = useAuth()
 
 const props = defineProps({
   compound: {
@@ -24,8 +24,6 @@ const offcanvasElement = ref(null)
 const detailedData = ref(null)
 const loadingDetail = ref(false)
 const protectedData = ref(null)
-const loadingSpecialData = ref(true)
-const has_passkey = ref(false)
 
 // 复制文本到剪贴板
 const copyToClipboard = async (text) => {
@@ -34,10 +32,35 @@ const copyToClipboard = async (text) => {
   try {
     await navigator.clipboard.writeText(text)
     // 可以添加一个简单的提示，这里使用Bootstrap的toast或alert
-    showToast('已复制到剪贴板')
+    showToast(t("superadmin.copied"))
   } catch (err) {
     console.error('复制失败:', err)
-    showToast('复制失败，请手动复制', 'error')
+    showToast(t("superadmin.copy_failed"), 'error')
+  }
+}
+
+const clickToDownload = async (type) => {  
+  try {
+    axios.get(`/api/data/${props.compound.id}/${type}`).then(res => {
+      const text = res.data; // 后端返回的纯文本
+      
+      const blob = new Blob([text], {
+        type: 'text/plain;charset=utf-8'
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = props.compound.id+'.log';   // 保存的文件名
+      link.click();
+
+      window.URL.revokeObjectURL(url);
+    });
+
+    showToast(t("details.downloaded"))
+  } catch (err) {
+    console.error('下载失败:', err)
+    showToast(t('details.download_failed'), 'error')
   }
 }
 
@@ -132,9 +155,9 @@ const fetchDetailedData = async (id) => {
 // 获取特殊数据（MS2, C-NMR, Bioactivity）
 const fetchSpecialData = async (id) => {
   if (!id) return
+  if (!isAuthenticated) return
   
   // 获取受保护的数据
-  loadingSpecialData.value = true
   try {
     const headers = {
       'Content-Type': 'application/json',
@@ -155,8 +178,6 @@ const fetchSpecialData = async (id) => {
   } catch (error) {
     console.error('Error fetching protected data:', error)
     protectedData.value = null
-  } finally {
-    loadingSpecialData.value = false
   }
 }
 
@@ -240,9 +261,9 @@ onUnmounted(() => {
         <!-- 加载状态 -->
         <div v-if="loadingDetail" class="text-center py-3">
           <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">加载中...</span>
+            <span class="visually-hidden">{{ t("browse.loading") }}</span>
           </div>
-          <p class="text-muted mt-2">正在加载详细数据...</p>
+          <p class="text-muted mt-2">{{ t("browse.loading") }}</p>
         </div>
         
         <!-- 绘制分子结构 -->
@@ -281,7 +302,7 @@ onUnmounted(() => {
                   </span>
                   <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
                      @click="copyToClipboard(detailedData.id)"
-                     title="点击复制"></i>
+                     :title="t('details.click2copy')"></i>
                 </p>
                 <p>
                   <strong>{{ t('details.compound_name') }}:</strong> 
@@ -326,7 +347,7 @@ onUnmounted(() => {
                   </span>
                   <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
                      @click="copyToClipboard(detailedData.cas_number)"
-                     title="点击复制"></i>
+                     :title="t('details.click2copy')"></i>
                 </p>
                 <p>
                   <strong>{{ t('details.formula') }}:</strong> 
@@ -341,7 +362,7 @@ onUnmounted(() => {
                   </span>
                   <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
                      @click="copyToClipboard(detailedData.formula)"
-                     title="点击复制"></i>
+                     :title="t('details.click2copy')"></i>
                 </p>
                 <p>
                   <strong>{{ t('details.smiles') }}:</strong> 
@@ -356,7 +377,7 @@ onUnmounted(() => {
                   </span>
                   <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
                      @click="copyToClipboard(detailedData.smiles)"
-                     title="点击复制"></i>
+                     :title="t('details.click2copy')"></i>
                 </p>
               </div>
             </div>
@@ -372,32 +393,45 @@ onUnmounted(() => {
             <div class="row">
               <div class="col-md-6">
                 <p>
-                  <strong>MS1:</strong> 
+                  <strong>MS1-H:</strong> 
                   <span 
-                    :title="detailedData.ms1 || 'N/A'"
+                    :title="detailedData.ms1_h || 'N/A'"
                     data-bs-toggle="tooltip" 
                     data-bs-placement="top"
                   >
-                    {{ truncateText(detailedData.ms1, 25) || 'N/A' }}
+                    {{ truncateText(detailedData.ms1_h, 25) || 'N/A' }}
+                  </span>
+                </p>
+                <p>
+                  <strong>MS1-Na:</strong> 
+                  <span 
+                    :title="detailedData.ms1_na || 'N/A'"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top"
+                  >
+                    {{ truncateText(detailedData.ms1_na, 25) || 'N/A' }}
                   </span>
                 </p>
                 <p>
                   <strong>MS2:</strong> 
-                  <span v-if="loadingSpecialData" class="text-muted">加载中...</span>
+                  <span v-if="isAuthenticated" class="text-muted">{{ t("details.not_auth") }}</span>
                   <span v-else-if="protectedData" 
                     :title="protectedData.ms2"
+                    @click="clickToDownload('ms2-full')"
                     data-bs-toggle="tooltip" 
                     data-bs-placement="top"
                   >
                     {{ truncateText(protectedData.ms2, 25) }}
-                  </span>
-                  <span v-else>N/A</span>
+                    <i class="bi bi-clipboard ms-1 text-muted small" style="cursor: pointer;" 
+                     @click="clickToDownload('ms2-full')"
+                     :title="t('details.click2download')"></i>
+                </span>
                 </p>
               </div>
               <div class="col-md-6">
                 <p>
                   <strong>C13-NMR:</strong> 
-                  <span v-if="loadingSpecialData" class="text-muted">加载中...</span>
+                  <span v-if="isAuthenticated" class="text-muted">{{ t("details.not_auth") }}</span>
                   <span v-else-if="protectedData"
                     :title="protectedData.nmr_13c_data"
                     data-bs-toggle="tooltip" 
@@ -409,7 +443,7 @@ onUnmounted(() => {
                 </p>
                 <p>
                   <strong>{{ t('details.bioactivity') }}:</strong> 
-                  <span v-if="loadingSpecialData" class="text-muted">加载中...</span>
+                  <span v-if="isAuthenticated" class="text-muted">{{ t("details.not_auth") }}</span>
                   <span v-else-if="protectedData"
                     :title="protectedData.bioactivity"
                     data-bs-toggle="tooltip" 

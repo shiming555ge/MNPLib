@@ -372,11 +372,8 @@ func GetStructure(c *gin.Context) {
 		return
 	}
 	// 定义只包含Structure的结构
-	type structure struct {
-		Structure *string `gorm:"column:Structure;type:TEXT" json:"structure,omitempty"`
-	}
 
-	var data structure
+	var data string
 	db := database.GetDB()
 
 	// 查询数据，只选择需要的字段

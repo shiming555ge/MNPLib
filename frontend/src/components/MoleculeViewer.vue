@@ -294,7 +294,7 @@ const fetchPDBFromAPI = async (id, smiles) => {
     console.log('API响应结果:', result)
     
     // 处理API响应格式    
-    return result.data.structure
+    return result.data
   } catch (error) {
     console.error('获取PDB数据失败:', error);
     console.log('尝试计算PDB数据');

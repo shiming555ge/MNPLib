@@ -49,7 +49,12 @@
         "structure": "Structure",
         "created_at": "Created At",
         "updated_at": "Updated At",
-        "weight": "Molecular Weight"
+        "weight": "Molecular Weight",
+        "not_auth": "No Authentication",
+        "click2copy": "Click to copy",
+        "click2download": "Click to download",
+        "downloaded": "Downloaded",
+        "download_failed": "Download failed"
     },
     "compound_card": {
         "details": "View Details"

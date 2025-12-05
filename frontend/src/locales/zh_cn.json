@@ -49,7 +49,12 @@
         "structure": "结构",
         "created_at": "创建时间",
         "updated_at": "更新时间",
-        "weight": "分子量"
+        "weight": "分子量",
+        "not_auth": "未登录",
+        "click2copy": "点击复制",
+        "click2download": "点击下载",
+        "downloaded": "已下载",
+        "download_failed": "下载失败"
     },
     "compound_card": {
         "details": "查看详情"
