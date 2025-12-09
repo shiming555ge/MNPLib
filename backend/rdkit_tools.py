@@ -86,6 +86,97 @@ def calculate_molecular_weight(smiles):
         return None
     return Descriptors.MolWt(mol)
 
+# 解析核磁谱数据
+def parse_nmr_data(nmr_text):
+    """
+    解析核磁谱文本数据，提取化学位移值
+    格式示例: "δ 170.5, 160.3, 140.2, 130.1, 120.5, 110.3"
+    或: "170.5, 160.3, 140.2, 130.1, 120.5, 110.3"
+    """
+    if not nmr_text:
+        return []
+    
+    # 移除常见的核磁谱标记
+    text = nmr_text.replace('δ', '').replace('ppm', '').strip()
+    
+    # 分割并提取数字
+    values = []
+    for part in text.split(','):
+        part = part.strip()
+        # 尝试提取数字
+        try:
+            # 移除非数字字符
+            num_str = ''
+            for char in part:
+                if char.isdigit() or char == '.' or char == '-':
+                    num_str += char
+            if num_str:
+                value = float(num_str)
+                values.append(value)
+        except:
+            continue
+    
+    return sorted(values)
+
+# 计算核磁谱相似度
+def calculate_nmr_similarity(query_nmr, db_nmr, tolerance=0.5):
+    """
+    计算两个核磁谱的相似度
+    使用简单的峰值匹配算法，允许一定的容差
+    """
+    if not query_nmr or not db_nmr:
+        return 0.0
+    
+    query_peaks = parse_nmr_data(query_nmr)
+    db_peaks = parse_nmr_data(db_nmr)
+    
+    if not query_peaks or not db_peaks:
+        return 0.0
+    
+    matched_count = 0
+    query_matched = [False] * len(query_peaks)
+    db_matched = [False] * len(db_peaks)
+    
+    # 尝试匹配每个查询峰值
+    for i, q_peak in enumerate(query_peaks):
+        for j, d_peak in enumerate(db_peaks):
+            if not db_matched[j] and abs(q_peak - d_peak) <= tolerance:
+                matched_count += 1
+                query_matched[i] = True
+                db_matched[j] = True
+                break
+    
+    # 计算相似度分数
+    # 使用F1分数：2 * precision * recall / (precision + recall)
+    precision = matched_count / len(query_peaks) if query_peaks else 0
+    recall = matched_count / len(db_peaks) if db_peaks else 0
+    
+    if precision + recall == 0:
+        return 0.0
+    
+    f1_score = 2 * precision * recall / (precision + recall)
+    return f1_score
+
+# 核磁谱搜索
+def nmr_search(query_nmr, library, threshold=0.5, tolerance=0.5):
+    """
+    在数据库中搜索相似的核磁谱
+    library: 包含id和nmr_13c_data的字典列表
+    """
+    results = []
+    
+    for item in library:
+        db_nmr = item.get('nmr_13c_data', '')
+        if not db_nmr:
+            continue
+            
+        similarity = calculate_nmr_similarity(query_nmr, db_nmr, tolerance)
+        if similarity >= threshold:
+            results.append((item['id'], similarity))
+    
+    # 按相似度降序排序
+    return sorted(results, key=lambda x: -x[1])
+
 if __name__=="__main__":
     # 模式
     while True:
@@ -194,6 +285,19 @@ if __name__=="__main__":
                         response = {"id": msg_id, "reply": "error: invalid smiles"}
                 else:
                     response = {"id": msg_id, "reply": "error: missing smiles parameter"}
+                    
+            elif action == "nmr_search":
+                # 核磁谱搜索
+                query_nmr = data.get("query_nmr")
+                library = data.get("library")
+                threshold = float(data.get('threshold', 0.5))
+                tolerance = float(data.get('tolerance', 0.5))
+                
+                if query_nmr and library:
+                    results = nmr_search(query_nmr, library, threshold, tolerance)
+                    response = {"id": msg_id, "reply": json.dumps(results)}
+                else:
+                    response = {"id": msg_id, "reply": "error: missing query_nmr or library parameter"}
                     
             else:
                 response = {"id": msg_id, "reply": "error: unknown action"}

@@ -114,3 +114,24 @@ func ExactMatchSearch(c *gin.Context) {
 	}
 	utils.JsonSuccessResponse(c, result)
 }
+
+// NMRSearch 核磁谱搜索
+func NMRSearch(c *gin.Context) {
+	// 绑定请求参数
+	queryNMR := c.Query("query_nmr")
+	threshold := c.DefaultQuery("threshold", "0.5")
+	tolerance := c.DefaultQuery("tolerance", "0.5")
+
+	// 验证参数
+	if queryNMR == "" {
+		utils.JsonErrorResponse(c, 200400, "查询核磁谱数据不能为空")
+		return
+	}
+
+	result, err := services.NMRSearch(queryNMR, threshold, tolerance)
+	if err != nil {
+		utils.JsonErrorResponse(c, 200500, fmt.Sprintf("核磁谱搜索失败: %v", err))
+		return
+	}
+	utils.JsonSuccessResponse(c, result)
+}

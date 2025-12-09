@@ -88,7 +88,9 @@
         "download_structure_failed": "下载结构失败",
         "ketcher_not_ready": "化学编辑器未就绪，请稍后重试",
         "empty_structure": "化学结构为空，请绘制有效的化学结构",
-        "invalid_structure": "化学结构无效，请检查绘制的结构"
+        "invalid_structure": "化学结构无效，请检查绘制的结构",
+        "c-nmr": "核磁谱搜索",
+        "cnmr_editor": "核磁谱编辑器"
     },
     "filter": {
         "category1": "类别 1",

@@ -7,7 +7,7 @@ import CompoundDetail from './CompoundDetail.vue'
 const { t } = useI18n()
 
 // 搜索模式状态
-const searchMode = ref('structure') // structure, substructure, similarity
+const searchMode = ref('structure') // structure, substructure, similarity, c-nmr
 const ketcherRef = ref(null)
 const searchResults = ref([])
 const loading = ref(false)
@@ -15,6 +15,12 @@ const errorMessage = ref('')
 const currentSmiles = ref('')
 const selectedCompound = ref(null)
 const showDetail = ref(false)
+
+// 核磁谱搜索相关
+const nmrText = ref('')
+const nmrFile = ref(null)
+const threshold = ref(0.5)
+const tolerance = ref(0.5)
 
 // 分页相关
 const currentPage = ref(1)
@@ -92,6 +98,30 @@ const fetchCompoundById = async (id) => {
   }
 }
 
+// 读取文本文件
+const readTextFile = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => resolve(e.target.result)
+    reader.onerror = (e) => reject(e)
+    reader.readAsText(file)
+  })
+}
+
+// 处理文件上传
+const handleFileUpload = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  try {
+    const content = await readTextFile(file)
+    nmrText.value = content
+  } catch (error) {
+    console.error('读取文件失败:', error)
+    errorMessage.value = '读取文件失败: ' + error.message
+  }
+}
+
 // 处理搜索操作
 const handleSearch = async () => {
   loading.value = true
@@ -100,91 +130,140 @@ const handleSearch = async () => {
   currentPage.value = 1
 
   try {
-    const smiles = await getSmilesFromKetcher()
-    if (!smiles) {
-      errorMessage.value = t('query.draw_structure_first')
-      return
-    }
+    if (searchMode.value === 'c-nmr') {
+      // 核磁谱搜索
+      if (!nmrText.value.trim()) {
+        errorMessage.value = '请输入核磁谱数据或上传文件'
+        return
+      }
+      
+      const response = await fetch(`/api/rdkit/nmr-search?query_nmr=${encodeURIComponent(nmrText.value)}&threshold=${threshold.value}&tolerance=${tolerance.value}`)
+      
+      if (!response.ok) {
+        throw new Error(`API请求失败: ${response.status}`)
+      }
 
-    let response
-    switch (searchMode.value) {
-      case 'structure':
-        // 精确结构匹配
-        response = await fetch(`/api/rdkit/exact-match?smiles=${encodeURIComponent(smiles)}`)
-        break
-      case 'substructure':
-        // 子结构搜索
-        response = await fetch(`/api/rdkit/substructure-search?smarts_pattern=${encodeURIComponent(smiles)}`)
-        break
-      case 'similarity':
-        // 相似度搜索
-        // 先获取指纹，然后进行相似度搜索
-        const fpResponse = await fetch(`/api/rdkit/smiles-to-fingerprint?smiles=${encodeURIComponent(smiles)}`)
-        
-        if (!fpResponse.ok) {
-          throw new Error(`指纹生成失败: ${fpResponse.status}`)
-        }
-        
-        const fpData = await fpResponse.json()
-        
-        // 检查API响应格式
-        if (!fpData) {
-          console.error('指纹API响应数据:', fpData)
-          throw new Error('指纹生成失败: 响应中未找到data字段')
-        }
-        
-        // 确保fingerprint不是undefined或null
-        if (!fpData) {
-          throw new Error('指纹生成失败: 指纹为空')
-        }
-        
-        response = await fetch(`/api/rdkit/similarity?qfp=${encodeURIComponent(fpData)}&threshold=0.5`)
-        break
-    }
-
-    if (!response.ok) {
-      throw new Error(`API请求失败: ${response.status}`)
-    }
-
-    const result = await response.json()
-    console.log('API响应结果:', result)
-    
-    // 处理API响应格式
-    if (result.code === 200200 && result.data) {
-      try {
-        const parsedData = JSON.parse(result.data)
-        console.log('解析出的数据:', parsedData)
-        
-        let compoundIds = []
-        
-        if (searchMode.value === 'similarity') {
-          // 相似度搜索：数据格式为 [["CMP0005", 1.0], ["CMP0054", 1.0]]
+      const result = await response.json()
+      console.log('核磁谱搜索API响应结果:', result)
+      
+      // 处理API响应格式
+      if (result.code === 200200 && result.data) {
+        try {
+          const parsedData = JSON.parse(result.data)
+          console.log('解析出的核磁谱搜索结果:', parsedData)
+          
+          let compoundIds = []
+          
+          // 核磁谱搜索：数据格式为 [["CMP0005", 0.8], ["CMP0054", 0.7]]
           if (Array.isArray(parsedData) && parsedData.length > 0) {
             compoundIds = parsedData.map(item => item[0]) // 提取ID
           }
-        } else {
-          // 精确匹配和子结构搜索：数据格式为 ["CMP0002", "CMP0003"]
-          if (Array.isArray(parsedData) && parsedData.length > 0) {
-            compoundIds = parsedData
+          
+          console.log('提取的化合物ID:', compoundIds)
+          
+          // 根据ID获取完整的化合物数据
+          if (compoundIds.length > 0) {
+            const compoundPromises = compoundIds.map(id => fetchCompoundById(id))
+            const compounds = await Promise.all(compoundPromises)
+            searchResults.value = compounds
+          } else {
+            searchResults.value = []
           }
-        }
-        
-        console.log('提取的化合物ID:', compoundIds)
-        
-        // 根据ID获取完整的化合物数据
-        if (compoundIds.length > 0) {
-          const compoundPromises = compoundIds.map(id => fetchCompoundById(id))
-          const compounds = await Promise.all(compoundPromises)
-          searchResults.value = compounds
-        } else {
+        } catch (parseError) {
+          console.error('解析核磁谱数据失败:', parseError)
           searchResults.value = []
         }
-      } catch (parseError) {
-        console.error('解析数据失败:', parseError)
+      } else {
         searchResults.value = []
       }
     } else {
-      searchResults.value = []
+      // 原有的结构搜索
+      const smiles = await getSmilesFromKetcher()
+      if (!smiles) {
+        errorMessage.value = t('query.draw_structure_first')
+        return
+      }
+
+      let response
+      switch (searchMode.value) {
+        case 'structure':
+          // 精确结构匹配
+          response = await fetch(`/api/rdkit/exact-match?smiles=${encodeURIComponent(smiles)}`)
+          break
+        case 'substructure':
+          // 子结构搜索
+          response = await fetch(`/api/rdkit/substructure-search?smarts_pattern=${encodeURIComponent(smiles)}`)
+          break
+        case 'similarity':
+          // 相似度搜索
+          // 先获取指纹，然后进行相似度搜索
+          const fpResponse = await fetch(`/api/rdkit/smiles-to-fingerprint?smiles=${encodeURIComponent(smiles)}`)
+          
+          if (!fpResponse.ok) {
+            throw new Error(`指纹生成失败: ${fpResponse.status}`)
+          }
+          
+          const fpData = await fpResponse.json()
+          
+          // 检查API响应格式
+          if (!fpData) {
+            console.error('指纹API响应数据:', fpData)
+            throw new Error('指纹生成失败: 响应中未找到data字段')
+          }
+          
+          // 确保fingerprint不是undefined或null
+          if (!fpData) {
+            throw new Error('指纹生成失败: 指纹为空')
+          }
+          
+          response = await fetch(`/api/rdkit/similarity?qfp=${encodeURIComponent(fpData)}&threshold=0.5`)
+          break
+      }
+
+      if (!response.ok) {
+        throw new Error(`API请求失败: ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log('API响应结果:', result)
+      
+      // 处理API响应格式
+      if (result.code === 200200 && result.data) {
+        try {
+          const parsedData = JSON.parse(result.data)
+          console.log('解析出的数据:', parsedData)
+          
+          let compoundIds = []
+          
+          if (searchMode.value === 'similarity') {
+            // 相似度搜索：数据格式为 [["CMP0005", 1.0], ["CMP0054", 1.0]]
+            if (Array.isArray(parsedData) && parsedData.length > 0) {
+              compoundIds = parsedData.map(item => item[0]) // 提取ID
+            }
+          } else {
+            // 精确匹配和子结构搜索：数据格式为 ["CMP0002", "CMP0003"]
+            if (Array.isArray(parsedData) && parsedData.length > 0) {
+              compoundIds = parsedData
+            }
+          }
+          
+          console.log('提取的化合物ID:', compoundIds)
+          
+          // 根据ID获取完整的化合物数据
+          if (compoundIds.length > 0) {
+            const compoundPromises = compoundIds.map(id => fetchCompoundById(id))
+            const compounds = await Promise.all(compoundPromises)
+            searchResults.value = compounds
+          } else {
+            searchResults.value = []
+          }
+        } catch (parseError) {
+          console.error('解析数据失败:', parseError)
+          searchResults.value = []
+        }
+      } else {
+        searchResults.value = []
+      }
     }
     
     totalItems.value = searchResults.value.length
@@ -296,9 +375,10 @@ const getSearchModeText = () => {
   const modes = {
     structure: t('query.exact_structure'),
     substructure: t('query.substructure'),
-    similarity: t('query.similarity')
+    similarity: t('query.similarity'),
+    'c-nmr': t('query.c-nmr')
   }
-  return modes[searchMode.value]
+  return modes[searchMode.value] || searchMode.value
 }
 
 // 组件挂载后设置Ketcher引用
@@ -355,6 +435,14 @@ onMounted(() => {
                 >
                   <i class="bi bi-arrow-left-right"></i> {{ t('query.similarity') }}
                 </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-primary text-start"
+                  :class="{ 'active': searchMode === 'c-nmr' }"
+                  @click="setSearchMode('c-nmr')"
+                >
+                  <i class="bi bi-magnet"></i> {{ t('query.c-nmr') }}
+                </button>
               </div>
             </div>
 
@@ -388,7 +476,7 @@ onMounted(() => {
       <!-- 右侧：Ketcher 编辑器和搜索结果 -->
       <div class="col-lg-9 col-md-8">
         <!-- Ketcher 编辑器 -->
-        <div class="card shadow-sm border-0 mb-4">
+        <div class="card shadow-sm border-0 mb-4" v-if="searchMode != 'c-nmr'">
           <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0">
               <i class="bi bi-pencil-square"></i> {{ t('query.chemical_editor') }}
@@ -403,6 +491,79 @@ onMounted(() => {
               style="height: 400px; min-height: 300px;"
               :title="t('query.chemical_editor')"
             ></iframe>
+          </div>
+        </div>
+        <div class="card shadow-sm border-0 mb-4" v-else>
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+              <i class="bi bi-pencil-square"></i> {{ t('query.cnmr_editor') }}
+            </h5>
+          </div>
+          <div class="card-body">
+            <!-- 核磁谱文本输入 -->
+            <div class="mb-3">
+              <label for="nmrText" class="form-label fw-semibold">核磁谱数据</label>
+              <textarea 
+                id="nmrText"
+                class="form-control" 
+                v-model="nmrText" 
+                rows="8" 
+                placeholder="请输入核磁谱数据，例如：δ 170.5, 160.3, 140.2, 130.1, 120.5, 110.3
+或上传文本文件..."
+              ></textarea>
+              <div class="form-text">支持格式：化学位移值列表，用逗号分隔</div>
+            </div>
+            
+            <!-- 文件上传 -->
+            <div class="mb-3">
+              <label for="nmrFile" class="form-label fw-semibold">从文件上传</label>
+              <input 
+                type="file" 
+                id="nmrFile" 
+                class="form-control" 
+                @change="handleFileUpload"
+                accept=".txt,.csv,.json,.log"
+              >
+              <div class="form-text">支持.txt、.csv、.json、.log格式的文本文件</div>
+            </div>
+            
+            <!-- 搜索参数 -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="threshold" class="form-label fw-semibold">相似度阈值</label>
+                <input 
+                  type="range" 
+                  id="threshold" 
+                  class="form-range" 
+                  v-model="threshold" 
+                  min="0" 
+                  max="1" 
+                  step="0.05"
+                >
+                <div class="d-flex justify-content-between">
+                  <small>0</small>
+                  <small class="fw-bold">{{ threshold.toFixed(2) }}</small>
+                  <small>1</small>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="tolerance" class="form-label fw-semibold">容差 (ppm)</label>
+                <input 
+                  type="range" 
+                  id="tolerance" 
+                  class="form-range" 
+                  v-model="tolerance" 
+                  min="0.1" 
+                  max="2" 
+                  step="0.1"
+                >
+                <div class="d-flex justify-content-between">
+                  <small>0.1</small>
+                  <small class="fw-bold">{{ tolerance.toFixed(1) }}</small>
+                  <small>2.0</small>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

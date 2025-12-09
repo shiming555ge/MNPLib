@@ -486,3 +486,58 @@ func GetSources() ([]string, error) {
 
 	return sources, nil
 }
+
+// NMRSearch 核磁谱搜索
+func NMRSearch(queryNMR string, threshold string, tolerance string) (string, error) {
+	// 检查Python进程是否已初始化
+	if p == nil {
+		errMsg := "RDkit进程未初始化"
+		utils.Log(errMsg)
+		return "", fmt.Errorf(errMsg)
+	}
+
+	// 获取数据库中的所有核磁谱数据
+	var compounds []struct {
+		ID           string `gorm:"column:ID" json:"id"`
+		NMR_13C_data string `gorm:"column:NMR_13C_data" json:"nmr_13c_data"`
+	}
+
+	// 使用正确的表名和字段名查询
+	result := database.GetDB().Table("data").Select("ID, NMR_13C_data").Find(&compounds)
+	if result.Error != nil {
+		utils.LogError(result.Error)
+		return "", fmt.Errorf("数据库查询失败: %v", result.Error)
+	}
+
+	// 准备发送给Python的数据
+	library := make([]map[string]interface{}, len(compounds))
+	for i, compound := range compounds {
+		library[i] = map[string]interface{}{
+			"id":           compound.ID,
+			"nmr_13c_data": compound.NMR_13C_data,
+		}
+	}
+
+	// 发送核磁谱搜索请求
+	requestData := map[string]interface{}{
+		"action":    "nmr_search",
+		"query_nmr": queryNMR,
+		"threshold": threshold,
+		"tolerance": tolerance,
+		"library":   library,
+	}
+
+	requestJSON, err := json.Marshal(requestData)
+	if err != nil {
+		utils.LogError(err)
+		return "", fmt.Errorf("请求数据序列化失败: %v", err)
+	}
+
+	res, err := p.SendAndWait(string(requestJSON))
+	if err != nil {
+		utils.LogError(err)
+		return "", fmt.Errorf("核磁谱搜索失败: %v", err)
+	}
+
+	return res, nil
+}

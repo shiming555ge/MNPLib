@@ -88,7 +88,9 @@
         "download_structure_failed": "Failed to download structure",
         "ketcher_not_ready": "Chemical editor not ready, please try again later",
         "empty_structure": "Chemical structure is empty, please draw a valid structure",
-        "invalid_structure": "Chemical structure is invalid, please check the drawn structure"
+        "invalid_structure": "Chemical structure is invalid, please check the drawn structure",
+        "c-nmr": "NMR Spectrum Search",
+        "cnmr_editor": "NMR Spectrum Editor"
     },
     "filter": {
         "category1": "Category 1",

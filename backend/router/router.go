@@ -59,6 +59,7 @@ func Init(r *gin.Engine) {
 			rdkit.GET("/is-substructure", controllers.IsSubstructure)
 			rdkit.GET("/substructure-search", controllers.SubstructureSearch)
 			rdkit.GET("/exact-match", controllers.ExactMatchSearch)
+			rdkit.GET("/nmr-search", controllers.NMRSearch)
 		}
 	}
 
