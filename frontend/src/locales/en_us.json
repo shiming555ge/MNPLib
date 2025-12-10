@@ -67,7 +67,7 @@
         "exact_structure": "Exact Structure Match",
         "substructure": "Substructure Search",
         "similarity": "Similarity Search",
-        "execute_search": "Execute Search",
+        "execute_search": "Submit",
         "get_structure": "Get Structure",
         "current_mode": "Current Mode",
         "quick_actions": "Quick Actions",
@@ -90,7 +90,17 @@
         "empty_structure": "Chemical structure is empty, please draw a valid structure",
         "invalid_structure": "Chemical structure is invalid, please check the drawn structure",
         "c-nmr": "NMR Spectrum Search",
-        "cnmr_editor": "NMR Spectrum Editor"
+        "cnmr_editor": "NMR Spectrum Editor",
+        "nmr_data": "NMR Spectrum Data",
+        "enter_nmr_data_or_upload": "Please enter NMR spectrum data or upload a file",
+        "upload_from_file": "Upload from file",
+        "supported_formats": "Supported formats: chemical shift value list, separated by commas",
+        "supported_file_formats": "Supported .txt, .csv, .json, .log format text files",
+        "similarity_threshold": "Similarity threshold",
+        "similarity_settings": "Similarity Search Settings",
+        "similarity_threshold_help": "Adjust the similarity threshold (0-1). Higher values return more similar compounds.",
+        "tolerance_ppm": "Tolerance (ppm)",
+        "file_read_failed": "Failed to read file: {error}"
     },
     "filter": {
         "category1": "Category 1",

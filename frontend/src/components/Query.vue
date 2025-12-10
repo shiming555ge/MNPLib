@@ -118,7 +118,7 @@ const handleFileUpload = async (event) => {
     nmrText.value = content
   } catch (error) {
     console.error('读取文件失败:', error)
-    errorMessage.value = '读取文件失败: ' + error.message
+    errorMessage.value = t('query.file_read_failed', { error: error.message })
   }
 }
 
@@ -133,7 +133,7 @@ const handleSearch = async () => {
     if (searchMode.value === 'c-nmr') {
       // 核磁谱搜索
       if (!nmrText.value.trim()) {
-        errorMessage.value = '请输入核磁谱数据或上传文件'
+        errorMessage.value = t('query.enter_nmr_data_or_upload')
         return
       }
       
@@ -216,7 +216,7 @@ const handleSearch = async () => {
             throw new Error('指纹生成失败: 指纹为空')
           }
           
-          response = await fetch(`/api/rdkit/similarity?qfp=${encodeURIComponent(fpData)}&threshold=0.5`)
+          response = await fetch(`/api/rdkit/similarity?qfp=${encodeURIComponent(fpData)}&threshold=${threshold.value}`)
           break
       }
 
@@ -459,6 +459,7 @@ onMounted(() => {
                 type="button"
                 class="btn btn-info btn-lg"
                 @click="handleDownloadStructure"
+                v-if="searchMode != 'c-nmr'"
               >
                 <i class="bi bi-download"></i> {{ t('query.save_structure') }}
               </button>
@@ -493,73 +494,105 @@ onMounted(() => {
             ></iframe>
           </div>
         </div>
-        <div class="card shadow-sm border-0 mb-4" v-else>
-          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        
+        <!-- 相似度搜索参数 -->
+        <div class="card shadow-sm border-0 mb-4" v-if="searchMode === 'similarity'">
+          <div class="card-header bg-info text-white">
             <h5 class="card-title mb-0">
-              <i class="bi bi-pencil-square"></i> {{ t('query.cnmr_editor') }}
+              <i class="bi bi-sliders"></i> {{ t('query.similarity_settings') }}
             </h5>
           </div>
           <div class="card-body">
-            <!-- 核磁谱文本输入 -->
-            <div class="mb-3">
-              <label for="nmrText" class="form-label fw-semibold">核磁谱数据</label>
-              <textarea 
-                id="nmrText"
-                class="form-control" 
-                v-model="nmrText" 
-                rows="8" 
-                placeholder="请输入核磁谱数据，例如：δ 170.5, 160.3, 140.2, 130.1, 120.5, 110.3
-或上传文本文件..."
-              ></textarea>
-              <div class="form-text">支持格式：化学位移值列表，用逗号分隔</div>
-            </div>
-            
-            <!-- 文件上传 -->
-            <div class="mb-3">
-              <label for="nmrFile" class="form-label fw-semibold">从文件上传</label>
-              <input 
-                type="file" 
-                id="nmrFile" 
-                class="form-control" 
-                @change="handleFileUpload"
-                accept=".txt,.csv,.json,.log"
-              >
-              <div class="form-text">支持.txt、.csv、.json、.log格式的文本文件</div>
-            </div>
-            
-            <!-- 搜索参数 -->
             <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="threshold" class="form-label fw-semibold">相似度阈值</label>
+              <div class="col-md-12 mb-3">
+                <label for="similarityThreshold" class="form-label fw-semibold">{{ t('query.similarity_threshold') }}</label>
                 <input 
                   type="range" 
-                  id="threshold" 
+                  id="similarityThreshold" 
                   class="form-range" 
-                  v-model="threshold" 
+                  v-model.number="threshold" 
                   min="0" 
                   max="1" 
                   step="0.05"
                 >
                 <div class="d-flex justify-content-between">
                   <small>0</small>
-                  <small class="fw-bold">{{ threshold.toFixed(2) }}</small>
+                  <small class="fw-bold">{{ Number(threshold).toFixed(2) }}</small>
+                  <small>1</small>
+                </div>
+                <div class="form-text">{{ t('query.similarity_threshold_help') }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card shadow-sm border-0 mb-4" v-else-if="searchMode === 'c-nmr'">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+              <i class="bi bi-pencil-square"></i> {{ t('query.cnmr_editor') }}
+            </h5>
+          </div>
+              <div class="card-body">
+            <!-- 核磁谱文本输入 -->
+            <div class="mb-3">
+              <label for="nmrText" class="form-label fw-semibold">{{ t('query.nmr_data') }}</label>
+              <textarea 
+                id="nmrText"
+                class="form-control" 
+                v-model="nmrText" 
+                rows="8" 
+                :placeholder="t('query.enter_nmr_data_or_upload')"
+              ></textarea>
+              <div class="form-text">{{ t('query.supported_formats') }}</div>
+            </div>
+            
+            <!-- 文件上传 -->
+            <div class="mb-3">
+              <label for="nmrFile" class="form-label fw-semibold">{{ t('query.upload_from_file') }}</label>
+              <input 
+                type="file" 
+                id="nmrFile" 
+
+                class="form-control" 
+                @change="handleFileUpload"
+                accept=".txt,.csv,.json,.log"
+              >
+              <div class="form-text">{{ t('query.supported_file_formats') }}</div>
+            </div>
+            
+            <!-- 搜索参数 -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="threshold" class="form-label fw-semibold">{{ t('query.similarity_threshold') }}</label>
+                <input 
+                  type="range" 
+                  id="threshold" 
+                  class="form-range" 
+                  v-model.number="threshold" 
+                  min="0" 
+                  max="1" 
+                  step="0.05"
+                >
+                <div class="d-flex justify-content-between">
+                  <small>0</small>
+                  <small class="fw-bold">{{ Number(threshold).toFixed(2) }}</small>
                   <small>1</small>
                 </div>
               </div>
               <div class="col-md-6 mb-3">
-                <label for="tolerance" class="form-label fw-semibold">容差 (ppm)</label>
+                <label for="tolerance" class="form-label fw-semibold">{{ t('query.tolerance_ppm') }}</label>
                 <input 
                   type="range" 
                   id="tolerance" 
                   class="form-range" 
-                  v-model="tolerance" 
+                  v-model.number="tolerance" 
                   min="0.1" 
                   max="2" 
                   step="0.1"
                 >
                 <div class="d-flex justify-content-between">
                   <small>0.1</small>
-                  <small class="fw-bold">{{ tolerance.toFixed(1) }}</small>
+                  <small class="fw-bold">{{ Number(tolerance).toFixed(1) }}</small>
                   <small>2.0</small>
                 </div>
               </div>
