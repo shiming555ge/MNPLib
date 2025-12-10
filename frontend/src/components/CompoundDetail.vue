@@ -442,7 +442,7 @@ onUnmounted(() => {
             <div class="row mb-3">
               <div class="col-md-6">
                 <div class="d-flex align-items-center">
-                  <strong class="me-2">MS1-H:</strong>
+                  <strong class="me-2">MS₁-H:</strong>
                   <span 
                     class="copyable-text flex-grow-1"
                     :title="detailedData.ms1_h || 'N/A'"
@@ -459,7 +459,7 @@ onUnmounted(() => {
               </div>
               <div class="col-md-6">
                 <div class="d-flex align-items-center">
-                  <strong class="me-2">MS1-Na:</strong>
+                  <strong class="me-2">MS₁-Na:</strong>
                   <span 
                     class="copyable-text flex-grow-1"
                     :title="detailedData.ms1_na || 'N/A'"
@@ -525,7 +525,7 @@ onUnmounted(() => {
               <div class="col-12">
                 <div class="ms2-section p-3 bg-light rounded">
                   <div class="d-flex justify-content-between align-items-center mb-2">
-                    <strong>MS2:</strong>
+                    <strong>MS₂:</strong>
                     <div>
                       <i class="bi bi-download me-2 text-primary" style="cursor: pointer;" 
                          @click="clickToDownload('ms2-full')"

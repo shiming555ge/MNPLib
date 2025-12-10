@@ -71,7 +71,8 @@ func Init(r *gin.Engine) {
 		r.Static("/home_pics", "./www/home_pics")
 		r.Static("/Ketcher", "./www/Ketcher")
 		r.StaticFile("/logo.png", "./www/logo.png")
-		r.StaticFile("/vite.svg", "./www/vite.svg")
+		r.StaticFile("/logo-full.png", "./www/logo-full.png")
+		r.StaticFile("/logo-with-fonts.png", "./www/logo-with-fonts.png")
 		r.StaticFile("/favicon.ico", "./www/favicon.ico")
 
 		// 根路径

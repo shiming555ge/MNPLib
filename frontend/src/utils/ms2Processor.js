@@ -90,6 +90,9 @@ export function parseMS2Data(ms2Text, maxPeaks = 2000, keepTopIntensity = true) 
         
         for (const line of lines) {
             const trimmedLine = line.trim();
+            if ((!trimmedLine) && currentEnergy.startsWith('energy2')) {
+                break;
+            }
             if (!trimmedLine) {
                 continue;
             }
@@ -156,7 +159,7 @@ export function parseMS2Data(ms2Text, maxPeaks = 2000, keepTopIntensity = true) 
             }
         }
     }
-    
+    console.log("峰解析数据: ",ms2Data)
     return ms2Data;
 }
 

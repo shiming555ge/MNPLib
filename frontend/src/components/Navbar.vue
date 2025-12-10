@@ -1,9 +1,19 @@
 <template>
     <nav class="navbar navbar-expand-lg text-white navbar-bg-primary sticky-top z-2">
       <div class="container-fluid">
-        <a class="navbar-brand text-light p-3" href="#">
-            <span class="fs-1 fw-bold">{{ t("navbar.brand_for_short") }}</span>
-            <span class="fs-6 p-3">{{ t("navbar.brand_for_full") }}</span>
+        <a class="navbar-brand text-light p-3 d-flex align-items-center" href="#">
+            <!-- 大屏设备：显示文字 -->
+            <div class="d-none d-lg-flex align-items-center">
+                <!-- <img src="/logo.png" alt="MNPLib Logo" class="me-3" style="height: 45px;"> -->
+                <div>
+                    <span class="fs-1 fw-bold">{{ t("navbar.brand_for_short") }}</span>
+                    <span class="fs-6 ps-2">{{ t("navbar.brand_for_full") }}</span>
+                </div>
+            </div>
+            <!-- 小屏设备：只显示logo-full.png -->
+            <div class="d-flex d-lg-none align-items-center justify-content-center w-100">
+                <img src="/logo-full.png" alt="MNPLib Logo" style="height: 55px;">
+            </div>
         </a>
         
         <!-- 移动端汉堡菜单按钮 -->

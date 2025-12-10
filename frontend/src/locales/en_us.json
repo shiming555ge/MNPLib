@@ -90,13 +90,13 @@
         "empty_structure": "Chemical structure is empty, please draw a valid structure",
         "invalid_structure": "Chemical structure is invalid, please check the drawn structure",
         "c-nmr": "NMR Spectrum Search",
-        "ms2": "MS2 Similarity Search",
+        "ms2": "MS₂ Similarity Search",
         "cnmr_editor": "NMR Spectrum Editor",
-        "ms2_editor": "MS2 Data Editor",
+        "ms2_editor": "MS₂ Data Editor",
         "nmr_data": "NMR Spectrum Data",
-        "ms2_data": "MS2 Data",
+        "ms2_data": "MS₂ Data",
         "enter_nmr_data_or_upload": "Please enter NMR spectrum data or upload a file",
-        "enter_ms2_data_or_upload": "Example: energy0\\n271.06010 15.81 45 (2.9501)\\n273.07575 50.41 49 53 64 62 61 60 55 58 57 56 92 (7.0903 1.1007 0.33349 0.31693 0.24094 0.11569 0.11206 0.052208 0.03833 0.0080716 1.1611e-05)\\nenergy1\\n55.05423 5.42 32 147 (0.86092 0.42807)\\n65.03858 6.17 44 (1.4683)",
+        "enter_ms2_data_or_upload": "#示例：\nenergy0\n0.06519 19.56 6 87 (4.6498 0.0050997)\n247.06010 14.86 63 273 (3.4605 0.075913)\n247.09649 5.57 66 84 75 (1.019 0.21666 0.090447)\nenergy2\n39.02293 22.07 171 (2.6539)\n41.03858 100.00 33 (12.027)\n43.05423 17.20 27 (2.0682)\n53.03858 23.73 148 (2.8545)\n55.05423 54.00 147 32 (4.6013 1.8934)\n57.03349 7.65 81 34 (0.66921 0.25071)\n57.06988 14.51 146 23 (1.58 0.16543)\n",
         "upload_from_file": "Upload from file",
         "supported_formats": "Supported formats: chemical shift value list, separated by commas",
         "ms2_supported_formats": "Format: each line contains m/z, intensity, fragment ID, etc., supports multiple energy levels (starting with energy0, energy1, etc.)",
@@ -113,7 +113,7 @@
         "threshold_range_error": "Similarity threshold must be between 0 and 1",
         "prefilter_range_error": "Prefilter threshold must be between 0 and 1",
         "similarity_threshold_help_ms2": "Adjust the similarity threshold (0-1). Higher values return more similar compounds. Prefilter threshold cannot exceed this value.",
-        "tolerance_da_help": "Mass tolerance (Da) for MS2 peak matching"
+        "tolerance_da_help": "Mass tolerance (Da) for MS₂ peak matching"
     },
     "filter": {
         "category1": "Category 1",
@@ -148,7 +148,7 @@
         "organisms": "Organisms",
         "bioactivities": "Bioactivities",
         "nmr": "NMR",
-        "ms": "MS/MS",
+        "ms": "MS₁/MS₂",
         "data_info": "Real-time database statistics"
     },
     "not_found": {

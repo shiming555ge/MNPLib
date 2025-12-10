@@ -14,7 +14,7 @@
             <div class="row align-items-center">
               <div class="col-12 col-lg-6 mb-4 mb-lg-0">
                 <img 
-                  src="/logo.png" 
+                  src="/logo-full.png" 
                   alt="MNPLib Logo" 
                   class="img-fluid rounded shadow"
                   style="max-height: 300px; object-fit: contain;"
