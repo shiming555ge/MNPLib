@@ -1,7 +1,12 @@
 /log/log.log
 /log/userinfo.txt
 config.yaml
+/__pycache__/*
 
 go.sum
 go.mod
 server
+
+MNP1.log
+A9_165640.txt
+init_ms2_data

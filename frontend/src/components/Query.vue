@@ -7,7 +7,7 @@ import CompoundDetail from './CompoundDetail.vue'
 const { t } = useI18n()
 
 // 搜索模式状态
-const searchMode = ref('structure') // structure, substructure, similarity, c-nmr
+const searchMode = ref('structure') // structure, substructure, similarity, c-nmr, ms2
 const ketcherRef = ref(null)
 const searchResults = ref([])
 const loading = ref(false)
@@ -21,6 +21,11 @@ const nmrText = ref('')
 const nmrFile = ref(null)
 const threshold = ref(0.5)
 const tolerance = ref(0.5)
+
+// MS2搜索相关
+const ms2Text = ref('')
+const ms2File = ref(null)
+const prefilterThreshold = ref(0.25) // 默认值为0.5的一半
 
 // 分页相关
 const currentPage = ref(1)
@@ -109,13 +114,17 @@ const readTextFile = (file) => {
 }
 
 // 处理文件上传
-const handleFileUpload = async (event) => {
+const handleFileUpload = async (event, type = 'nmr') => {
   const file = event.target.files[0]
   if (!file) return
   
   try {
     const content = await readTextFile(file)
-    nmrText.value = content
+    if (type === 'nmr') {
+      nmrText.value = content
+    } else if (type === 'ms2') {
+      ms2Text.value = content
+    }
   } catch (error) {
     console.error('读取文件失败:', error)
     errorMessage.value = t('query.file_read_failed', { error: error.message })
@@ -130,10 +139,37 @@ const handleSearch = async () => {
   currentPage.value = 1
 
   try {
+    // 验证MS2搜索参数
+    if (searchMode.value === 'ms2') {
+      // 验证Prefilter Threshold和Similarity threshold的关系
+      if (prefilterThreshold.value > threshold.value) {
+        errorMessage.value = t('query.prefilter_threshold_error', { 
+          prefilter: prefilterThreshold.value.toFixed(2), 
+          similarity: threshold.value.toFixed(2) 
+        })
+        loading.value = false
+        return
+      }
+      
+      // 验证阈值范围
+      if (threshold.value < 0 || threshold.value > 1) {
+        errorMessage.value = t('query.threshold_range_error')
+        loading.value = false
+        return
+      }
+      
+      if (prefilterThreshold.value < 0 || prefilterThreshold.value > 1) {
+        errorMessage.value = t('query.prefilter_range_error')
+        loading.value = false
+        return
+      }
+    }
+
     if (searchMode.value === 'c-nmr') {
       // 核磁谱搜索
       if (!nmrText.value.trim()) {
         errorMessage.value = t('query.enter_nmr_data_or_upload')
+        loading.value = false
         return
       }
       
@@ -175,6 +211,81 @@ const handleSearch = async () => {
         }
       } else {
         searchResults.value = []
+      }
+    } else if (searchMode.value === 'ms2') {
+      // MS2相似度搜索 - 使用客户端指纹计算
+      if (!ms2Text.value.trim()) {
+        errorMessage.value = t('query.enter_ms2_data_or_upload')
+        return
+      }
+      
+      try {
+        // 动态导入MS2处理器（避免在不需要时加载）
+        const ms2Processor = await import('../utils/ms2Processor.js')
+        
+        // 在客户端计算指纹，限制最大峰数量为5000，保留强度最高的峰，避免处理大文件时性能问题
+        const fingerprintJson = ms2Processor.calculateMS2FingerprintJson(ms2Text.value, 5000, true)
+        
+        if (!fingerprintJson) {
+          throw new Error('无法计算MS2指纹：数据格式可能不正确')
+        }
+        
+        console.log('客户端计算的MS2指纹完成，发送到后端进行搜索...')
+        
+        // 使用新的指纹搜索API
+        const response = await fetch('/api/rdkit/ms2-search-by-fingerprint', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fingerprint_json: fingerprintJson,
+            threshold: threshold.value,
+            tolerance: tolerance.value,
+            prefilter_threshold: prefilterThreshold.value
+          })
+        })
+        
+        if (!response.ok) {
+          throw new Error(`API请求失败: ${response.status}`)
+        }
+
+        const result = await response.json()
+        console.log('MS2指纹搜索API响应结果:', result)
+        
+        // 处理API响应格式
+        if (result.code === 200200 && result.data) {
+          try {
+            const parsedData = JSON.parse(result.data)
+            console.log('解析出的MS2搜索结果:', parsedData)
+            
+            let compoundIds = []
+            
+            // MS2搜索：数据格式为 [["CMP0005", 0.8], ["CMP0054", 0.7]]
+            if (Array.isArray(parsedData) && parsedData.length > 0) {
+              compoundIds = parsedData.map(item => item[0]) // 提取ID
+            }
+            
+            console.log('提取的化合物ID:', compoundIds)
+            
+            // 根据ID获取完整的化合物数据
+            if (compoundIds.length > 0) {
+              const compoundPromises = compoundIds.map(id => fetchCompoundById(id))
+              const compounds = await Promise.all(compoundPromises)
+              searchResults.value = compounds
+            } else {
+              searchResults.value = []
+            }
+          } catch (parseError) {
+            console.error('解析MS2数据失败:', parseError)
+            searchResults.value = []
+          }
+        } else {
+          searchResults.value = []
+        }
+      } catch (error) {
+        console.error('MS2搜索失败:', error)
+        errorMessage.value = error.message || t('query.search_failed')
       }
     } else {
       // 原有的结构搜索
@@ -376,9 +487,18 @@ const getSearchModeText = () => {
     structure: t('query.exact_structure'),
     substructure: t('query.substructure'),
     similarity: t('query.similarity'),
-    'c-nmr': t('query.c-nmr')
+    'c-nmr': t('query.c-nmr'),
+    'ms2': t('query.ms2')
   }
   return modes[searchMode.value] || searchMode.value
+}
+
+// 调整Prefilter threshold的最大值
+const adjustPrefilterMax = () => {
+  // 如果prefilterThreshold大于threshold，则将其调整为threshold
+  if (prefilterThreshold.value > threshold.value) {
+    prefilterThreshold.value = threshold.value
+  }
 }
 
 // 组件挂载后设置Ketcher引用
@@ -443,6 +563,14 @@ onMounted(() => {
                 >
                   <i class="bi bi-magnet"></i> {{ t('query.c-nmr') }}
                 </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-primary text-start"
+                  :class="{ 'active': searchMode === 'ms2' }"
+                  @click="setSearchMode('ms2')"
+                >
+                  <i class="bi bi-graph-up"></i> {{ t('query.ms2') }}
+                </button>
               </div>
             </div>
 
@@ -477,7 +605,7 @@ onMounted(() => {
       <!-- 右侧：Ketcher 编辑器和搜索结果 -->
       <div class="col-lg-9 col-md-8">
         <!-- Ketcher 编辑器 -->
-        <div class="card shadow-sm border-0 mb-4" v-if="searchMode != 'c-nmr'">
+        <div class="card shadow-sm border-0 mb-4" v-if="searchMode != 'c-nmr' && searchMode != 'ms2'">
           <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0">
               <i class="bi bi-pencil-square"></i> {{ t('query.chemical_editor') }}
@@ -554,7 +682,7 @@ onMounted(() => {
                 id="nmrFile" 
 
                 class="form-control" 
-                @change="handleFileUpload"
+                @change="(event) => handleFileUpload(event, 'nmr')"
                 accept=".txt,.csv,.json,.log"
               >
               <div class="form-text">{{ t('query.supported_file_formats') }}</div>
@@ -595,6 +723,102 @@ onMounted(() => {
                   <small class="fw-bold">{{ Number(tolerance).toFixed(1) }}</small>
                   <small>2.0</small>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MS2搜索界面 -->
+        <div class="card shadow-sm border-0 mb-4" v-else-if="searchMode === 'ms2'">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+              <i class="bi bi-pencil-square"></i> {{ t('query.ms2_editor') }}
+            </h5>
+          </div>
+              <div class="card-body">
+            <!-- MS2文本输入 -->
+            <div class="mb-3">
+              <label for="ms2Text" class="form-label fw-semibold">{{ t('query.ms2_data') }}</label>
+              <textarea 
+                id="ms2Text"
+                class="form-control" 
+                v-model="ms2Text" 
+                rows="8" 
+                :placeholder="t('query.enter_ms2_data_or_upload')"
+              ></textarea>
+              <div class="form-text">{{ t('query.ms2_supported_formats') }}</div>
+            </div>
+            
+            <!-- 文件上传 -->
+            <div class="mb-3">
+              <label for="ms2File" class="form-label fw-semibold">{{ t('query.upload_from_file') }}</label>
+              <input 
+                type="file" 
+                id="ms2File" 
+
+                class="form-control" 
+                @change="(event) => handleFileUpload(event, 'ms2')"
+                accept=".txt,.csv,.json,.log"
+              >
+              <div class="form-text">{{ t('query.supported_file_formats') }}</div>
+            </div>
+            
+            <!-- 搜索参数 -->
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="threshold" class="form-label fw-semibold">{{ t('query.similarity_threshold') }}</label>
+                <input 
+                  type="range" 
+                  id="threshold" 
+                  class="form-range" 
+                  v-model.number="threshold" 
+                  min="0" 
+                  max="1" 
+                  step="0.05"
+                  @input="adjustPrefilterMax"
+                >
+                <div class="d-flex justify-content-between">
+                  <small>0</small>
+                  <small class="fw-bold">{{ Number(threshold).toFixed(2) }}</small>
+                  <small>1</small>
+                </div>
+                <div class="form-text">{{ t('query.similarity_threshold_help_ms2') }}</div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="tolerance" class="form-label fw-semibold">{{ t('query.tolerance_da') }}</label>
+                <input 
+                  type="range" 
+                  id="tolerance" 
+                  class="form-range" 
+                  v-model.number="tolerance" 
+                  min="0.1" 
+                  max="2" 
+                  step="0.1"
+                >
+                <div class="d-flex justify-content-between">
+                  <small>0.1</small>
+                  <small class="fw-bold">{{ Number(tolerance).toFixed(1) }}</small>
+                  <small>2.0</small>
+                </div>
+                <div class="form-text">{{ t('query.tolerance_da_help') }}</div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="prefilterThreshold" class="form-label fw-semibold">{{ t('query.prefilter_threshold') }}</label>
+                <input 
+                  type="range" 
+                  id="prefilterThreshold" 
+                  class="form-range" 
+                  v-model.number="prefilterThreshold" 
+                  :min="0" 
+                  :max="threshold" 
+                  step="0.05"
+                >
+                <div class="d-flex justify-content-between">
+                  <small>0</small>
+                  <small class="fw-bold">{{ Number(prefilterThreshold).toFixed(2) }}</small>
+                  <small>{{ Number(threshold).toFixed(2) }}</small>
+                </div>
+                <div class="form-text">{{ t('query.prefilter_threshold_help', { max: threshold.toFixed(2) }) }}</div>
               </div>
             </div>
           </div>

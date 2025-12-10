@@ -135,3 +135,97 @@ func NMRSearch(c *gin.Context) {
 	}
 	utils.JsonSuccessResponse(c, result)
 }
+
+// MS2Search MS2相似度搜索（接收原始MS2文本）
+func MS2Search(c *gin.Context) {
+	// 定义请求结构体
+	type MS2SearchRequest struct {
+		QueryMS2           string  `json:"query_ms2" binding:"required"`
+		Threshold          float64 `json:"threshold"`
+		Tolerance          float64 `json:"tolerance"`
+		PrefilterThreshold float64 `json:"prefilter_threshold"`
+	}
+
+	// 绑定请求参数
+	var req MS2SearchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.JsonErrorResponse(c, 200400, fmt.Sprintf("请求参数错误: %v", err))
+		return
+	}
+
+	// 设置默认值
+	if req.Threshold == 0 {
+		req.Threshold = 0.5
+	}
+	if req.Tolerance == 0 {
+		req.Tolerance = 0.5
+	}
+	if req.PrefilterThreshold == 0 {
+		req.PrefilterThreshold = 0.3
+	}
+
+	// 验证参数
+	if req.QueryMS2 == "" {
+		utils.JsonErrorResponse(c, 200400, "查询MS2数据不能为空")
+		return
+	}
+
+	// 转换参数为字符串
+	thresholdStr := fmt.Sprintf("%.2f", req.Threshold)
+	toleranceStr := fmt.Sprintf("%.2f", req.Tolerance)
+	prefilterThresholdStr := fmt.Sprintf("%.2f", req.PrefilterThreshold)
+
+	result, err := services.MS2Search(req.QueryMS2, thresholdStr, toleranceStr, prefilterThresholdStr)
+	if err != nil {
+		utils.JsonErrorResponse(c, 200500, fmt.Sprintf("MS2相似度搜索失败: %v", err))
+		return
+	}
+	utils.JsonSuccessResponse(c, result)
+}
+
+// MS2SearchByFingerprint MS2相似度搜索（接收指纹数据）
+func MS2SearchByFingerprint(c *gin.Context) {
+	// 定义请求结构体
+	type MS2FingerprintSearchRequest struct {
+		FingerprintJson    string  `json:"fingerprint_json" binding:"required"`
+		Threshold          float64 `json:"threshold"`
+		Tolerance          float64 `json:"tolerance"`
+		PrefilterThreshold float64 `json:"prefilter_threshold"`
+	}
+
+	// 绑定请求参数
+	var req MS2FingerprintSearchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.JsonErrorResponse(c, 200400, fmt.Sprintf("请求参数错误: %v", err))
+		return
+	}
+
+	// 设置默认值
+	if req.Threshold == 0 {
+		req.Threshold = 0.5
+	}
+	if req.Tolerance == 0 {
+		req.Tolerance = 0.5
+	}
+	if req.PrefilterThreshold == 0 {
+		req.PrefilterThreshold = 0.3
+	}
+
+	// 验证参数
+	if req.FingerprintJson == "" {
+		utils.JsonErrorResponse(c, 200400, "指纹JSON数据不能为空")
+		return
+	}
+
+	// 转换参数为字符串
+	thresholdStr := fmt.Sprintf("%.2f", req.Threshold)
+	toleranceStr := fmt.Sprintf("%.2f", req.Tolerance)
+	prefilterThresholdStr := fmt.Sprintf("%.2f", req.PrefilterThreshold)
+
+	result, err := services.MS2SearchByFingerprint(req.FingerprintJson, thresholdStr, toleranceStr, prefilterThresholdStr)
+	if err != nil {
+		utils.JsonErrorResponse(c, 200500, fmt.Sprintf("MS2指纹搜索失败: %v", err))
+		return
+	}
+	utils.JsonSuccessResponse(c, result)
+}
