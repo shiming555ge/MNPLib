@@ -165,59 +165,17 @@ def nmr_search(query_nmr, library, threshold=0.5, tolerance=0.5):
     """
     results = []
     
-    # 预解析查询NMR数据
-    query_peaks = parse_nmr_data(query_nmr)
-    if not query_peaks:
-        return results
-    
     for item in library:
         db_nmr = item.get('nmr_13c_data', '')
         if not db_nmr:
             continue
-        
-        # 解析数据库NMR数据
-        db_peaks = parse_nmr_data(db_nmr)
-        if not db_peaks:
-            continue
             
-        # 计算相似度
-        similarity = calculate_nmr_similarity_with_peaks(query_peaks, db_peaks, tolerance)
+        similarity = calculate_nmr_similarity(query_nmr, db_nmr, tolerance)
         if similarity >= threshold:
             results.append((item['id'], similarity))
     
     # 按相似度降序排序
     return sorted(results, key=lambda x: -x[1])
-
-def calculate_nmr_similarity_with_peaks(query_peaks, db_peaks, tolerance=0.5):
-    """
-    使用预解析的峰值数据计算核磁谱相似度
-    """
-    if not query_peaks or not db_peaks:
-        return 0.0
-    
-    matched_count = 0
-    query_matched = [False] * len(query_peaks)
-    db_matched = [False] * len(db_peaks)
-    
-    # 尝试匹配每个查询峰值
-    for i, q_peak in enumerate(query_peaks):
-        for j, d_peak in enumerate(db_peaks):
-            if not db_matched[j] and abs(q_peak - d_peak) <= tolerance:
-                matched_count += 1
-                query_matched[i] = True
-                db_matched[j] = True
-                break
-    
-    # 计算相似度分数
-    # 使用F1分数：2 * precision * recall / (precision + recall)
-    precision = matched_count / len(query_peaks) if query_peaks else 0
-    recall = matched_count / len(db_peaks) if db_peaks else 0
-    
-    if precision + recall == 0:
-        return 0.0
-    
-    f1_score = 2 * precision * recall / (precision + recall)
-    return f1_score
 
 # ==================== MS2相似度搜索函数 ====================
 
@@ -481,46 +439,6 @@ def binary_fingerprint_similarity(binary_fp1, binary_fp2):
     
     return intersection / union
 
-def float_fingerprint_to_binary(fp, threshold=0.01):
-    """
-    将浮点数指纹转换为二进制指纹
-    
-    参数:
-        fp: 浮点数指纹数组
-        threshold: 阈值，大于该值的设为1，否则为0
-        
-    返回:
-        二进制指纹数组（0和1）
-    """
-    import numpy as np
-    return (np.array(fp) > threshold).astype(np.uint8)
-
-def binary_fingerprint_to_base64(binary_fp):
-    """
-    将二进制指纹转换为base64编码
-    
-    参数:
-        binary_fp: 二进制指纹数组（0和1）
-        
-    返回:
-        base64编码的字符串
-    """
-    import numpy as np
-    
-    # 将二进制数组转换为字节
-    # 每8位转换为一个字节
-    # 确保长度是8的倍数
-    padded_length = ((len(binary_fp) + 7) // 8) * 8
-    padded = np.zeros(padded_length, dtype=np.uint8)
-    padded[:len(binary_fp)] = binary_fp
-    
-    # 转换为字节
-    bytes_array = np.packbits(padded.reshape(-1, 8))
-    
-    # 转换为base64
-    import base64
-    return base64.b64encode(bytes_array.tobytes()).decode('ascii')
-
 def ms2_search(query_ms2_text, library, threshold=0.5, tolerance=0.5, prefilter_threshold=0.3):
     """
     MS2相似度搜索（两阶段策略）
@@ -562,52 +480,21 @@ def ms2_search(query_ms2_text, library, threshold=0.5, tolerance=0.5, prefilter_
         try:
             # 解析指纹数据
             fingerprint_data = json.loads(item['MS2_fingerprint'])
+            db_fingerprint = fingerprint_data.get('fingerprint', [])
             
-            # 尝试从新的数据结构中获取数据
-            # 首先检查是否有all_fingerprint_base64（新格式）
-            all_fingerprint_base64 = fingerprint_data.get('all_fingerprint_base64', '')
-            all_peaks = fingerprint_data.get('all_peaks', [])
+            if not db_fingerprint:
+                continue
+                
+            # 计算指纹相似度
+            fingerprint_sim = cosine_similarity_fingerprint(query_fingerprint, db_fingerprint)
             
-            if all_fingerprint_base64 and all_peaks:
-                # 使用新格式的数据
-                # 解码base64指纹为二进制指纹
-                db_binary_fp = base64_to_binary_fingerprint(all_fingerprint_base64)
-                
-                # 计算查询指纹（转换为二进制）
-                query_binary_fp = float_fingerprint_to_binary(query_fingerprint, threshold=0.01)
-                query_binary_fp_base64 = binary_fingerprint_to_base64(query_binary_fp)
-                query_binary_fp_decoded = base64_to_binary_fingerprint(query_binary_fp_base64)
-                
-                # 计算二进制指纹相似度
-                fingerprint_sim = binary_fingerprint_similarity(query_binary_fp_decoded, db_binary_fp)
-                
-                if fingerprint_sim >= prefilter_threshold:
-                    prefiltered_items.append({
-                        'id': item['id'],
-                        'fingerprint_sim': fingerprint_sim,
-                        'fingerprint_data': fingerprint_data,
-                        'db_peaks': all_peaks
-                    })
-            else:
-                # 尝试旧格式的数据
-                db_fingerprint = fingerprint_data.get('fingerprint', [])
-                db_peaks = fingerprint_data.get('peaks', [])
-                
-                if not db_fingerprint or not db_peaks:
-                    continue
-                    
-                # 计算指纹相似度
-                fingerprint_sim = cosine_similarity_fingerprint(query_fingerprint, db_fingerprint)
-                
-                if fingerprint_sim >= prefilter_threshold:
-                    prefiltered_items.append({
-                        'id': item['id'],
-                        'fingerprint_sim': fingerprint_sim,
-                        'fingerprint_data': fingerprint_data,
-                        'db_peaks': db_peaks
-                    })
-        except Exception as e:
-            print(f"处理数据库化合物 {item.get('id', 'unknown')} 失败: {e}")
+            if fingerprint_sim >= prefilter_threshold:
+                prefiltered_items.append({
+                    'id': item['id'],
+                    'fingerprint_sim': fingerprint_sim,
+                    'fingerprint_data': fingerprint_data
+                })
+        except:
             continue
     
     print(f"预筛选后保留 {len(prefiltered_items)} 个化合物")
@@ -615,13 +502,18 @@ def ms2_search(query_ms2_text, library, threshold=0.5, tolerance=0.5, prefilter_
     # 3. 第二阶段：精确modified cosine计算
     for item in prefiltered_items:
         try:
+            # 获取数据库化合物的峰数据
+            db_peaks = item['fingerprint_data'].get('peaks', [])
+            
+            if not db_peaks:
+                continue
+                
             # 计算modified cosine相似度
-            similarity = modified_cosine_similarity(query_peaks, item['db_peaks'], tolerance)
+            similarity = modified_cosine_similarity(query_peaks, db_peaks, tolerance)
             
             if similarity >= threshold:
                 results.append((item['id'], similarity))
-        except Exception as e:
-            print(f"计算modified cosine相似度失败: {e}")
+        except:
             continue
     
     # 按相似度降序排序
@@ -707,125 +599,6 @@ def ms2_search_by_fingerprint(fingerprint_json, library, threshold=0.5, toleranc
                 
             # 计算modified cosine相似度
             similarity = modified_cosine_similarity(query_peaks, db_peaks, tolerance)
-            
-            if similarity >= threshold:
-                results.append((item['id'], similarity))
-        except Exception as e:
-            print(f"计算modified cosine相似度失败: {e}")
-            continue
-    
-    # 按相似度降序排序
-    return sorted(results, key=lambda x: -x[1])
-
-
-def ms2_search_by_energy_level(query_ms2_text, library, threshold=0.5, tolerance=0.5, prefilter_threshold=0.3, energy_level=None):
-    """
-    MS2相似度搜索（按能量级别分别比对）
-    
-    参数:
-        query_ms2_text: 查询MS2文本数据
-        library: 数据库中的化合物列表，每个元素包含id和MS2_fingerprint
-        threshold: 最终相似度阈值
-        tolerance: 质量容差（Da）
-        prefilter_threshold: 预筛选阈值
-        energy_level: 指定能量级别（如'energy0', 'energy1', 'energy2'），如果为None则使用所有能量级别
-        
-    返回:
-        相似度结果列表，按相似度降序排序
-    """
-    import numpy as np
-    import json
-    
-    # 1. 解析查询MS2数据
-    query_ms2_data = parse_ms2_data(query_ms2_text)
-    if not query_ms2_data:
-        return []
-    
-    # 根据指定的能量级别选择查询峰
-    if energy_level and energy_level in query_ms2_data:
-        query_peaks = query_ms2_data[energy_level]
-        # 计算查询指纹（仅指定能量级别）
-        energy_ms2_data = {energy_level: query_peaks}
-        query_fingerprint = calculate_ms2_fingerprint(energy_ms2_data)
-    else:
-        # 使用所有能量级别（向后兼容）
-        query_peaks = []
-        for peaks in query_ms2_data.values():
-            query_peaks.extend(peaks)
-        query_fingerprint = calculate_ms2_fingerprint(query_ms2_data)
-    
-    results = []
-    
-    # 2. 第一阶段：指纹预筛选
-    prefiltered_items = []
-    for item in library:
-        if 'MS2_fingerprint' not in item or not item['MS2_fingerprint']:
-            continue
-            
-        try:
-            # 解析指纹数据
-            fingerprint_data = json.loads(item['MS2_fingerprint'])
-            
-            # 获取能量级别数据
-            energy_levels_data = fingerprint_data.get('energy_levels', {})
-            
-            if energy_level and energy_level in energy_levels_data:
-                # 使用指定能量级别的数据
-                db_energy_data = energy_levels_data[energy_level]
-                db_peaks = db_energy_data.get('peaks', [])
-                db_fingerprint_base64 = db_energy_data.get('fingerprint_base64', '')
-                
-                if not db_peaks or not db_fingerprint_base64:
-                    continue
-                    
-                # 解码base64指纹为二进制指纹
-                db_binary_fp = base64_to_binary_fingerprint(db_fingerprint_base64)
-                
-                # 计算查询指纹（仅指定能量级别）
-                query_binary_fp = float_fingerprint_to_binary(query_fingerprint, threshold=0.01)
-                query_binary_fp_base64 = binary_fingerprint_to_base64(query_binary_fp)
-                query_binary_fp_decoded = base64_to_binary_fingerprint(query_binary_fp_base64)
-                
-                # 计算二进制指纹相似度
-                fingerprint_sim = binary_fingerprint_similarity(query_binary_fp_decoded, db_binary_fp)
-                
-            else:
-                # 使用合并的数据（向后兼容）
-                db_peaks = fingerprint_data.get('peaks', [])
-                db_fingerprint_base64 = fingerprint_data.get('fingerprint_base64', '')
-                
-                if not db_peaks or not db_fingerprint_base64:
-                    continue
-                    
-                # 解码base64指纹为二进制指纹
-                db_binary_fp = base64_to_binary_fingerprint(db_fingerprint_base64)
-                
-                # 计算查询指纹（所有能量级别）
-                query_binary_fp = float_fingerprint_to_binary(query_fingerprint, threshold=0.01)
-                query_binary_fp_base64 = binary_fingerprint_to_base64(query_binary_fp)
-                query_binary_fp_decoded = base64_to_binary_fingerprint(query_binary_fp_base64)
-                
-                # 计算二进制指纹相似度
-                fingerprint_sim = binary_fingerprint_similarity(query_binary_fp_decoded, db_binary_fp)
-            
-            if fingerprint_sim >= prefilter_threshold:
-                prefiltered_items.append({
-                    'id': item['id'],
-                    'fingerprint_sim': fingerprint_sim,
-                    'fingerprint_data': fingerprint_data,
-                    'db_peaks': db_peaks
-                })
-        except Exception as e:
-            print(f"处理数据库化合物 {item.get('id', 'unknown')} 失败: {e}")
-            continue
-    
-    print(f"预筛选后保留 {len(prefiltered_items)} 个化合物")
-    
-    # 3. 第二阶段：精确modified cosine计算
-    for item in prefiltered_items:
-        try:
-            # 计算modified cosine相似度
-            similarity = modified_cosine_similarity(query_peaks, item['db_peaks'], tolerance)
             
             if similarity >= threshold:
                 results.append((item['id'], similarity))
@@ -985,21 +758,6 @@ if __name__=="__main__":
                     response = {"id": msg_id, "reply": json.dumps(results)}
                 else:
                     response = {"id": msg_id, "reply": "error: missing fingerprint_json or library parameter"}
-                    
-            elif action == "ms2_search_by_energy_level":
-                # MS2按能量级别搜索
-                query_ms2 = data.get("query_ms2")
-                library = data.get("library")
-                threshold = float(data.get('threshold', 0.5))
-                tolerance = float(data.get('tolerance', 0.5))
-                prefilter_threshold = float(data.get('prefilter_threshold', 0.3))
-                energy_level = data.get('energy_level')
-                
-                if query_ms2 and library:
-                    results = ms2_search_by_energy_level(query_ms2, library, threshold, tolerance, prefilter_threshold, energy_level)
-                    response = {"id": msg_id, "reply": json.dumps(results)}
-                else:
-                    response = {"id": msg_id, "reply": "error: missing query_ms2 or library parameter"}
                     
             else:
                 response = {"id": msg_id, "reply": "error: unknown action"}

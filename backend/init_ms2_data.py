@@ -242,26 +242,52 @@ def calculate_ms2_fingerprint_modified(ms2_data: Dict[str, List[Tuple[float, flo
         ms2_data: 解析后的MS2数据
         
     返回:
-        包含峰列表和base64编码的二进制指纹的字典
+        包含每个能量级别的峰列表和base64编码的二进制指纹的字典
     """
-    # 合并所有能量级别的峰
+    # 存储每个能量级别的数据
+    energy_level_data = {}
+    
+    for energy_level, peaks in ms2_data.items():
+        if not peaks:
+            continue
+            
+        # 为每个能量级别计算指纹
+        energy_ms2_data = {energy_level: peaks}
+        fingerprint_float = calculate_ms2_fingerprint(energy_ms2_data)
+        
+        # 转换为二进制指纹
+        fingerprint_binary = float_fingerprint_to_binary(fingerprint_float, threshold=0.01)
+        
+        # 转换为base64编码
+        fingerprint_base64 = binary_fingerprint_to_base64(fingerprint_binary)
+        
+        energy_level_data[energy_level] = {
+            'peaks': peaks,
+            'fingerprint_base64': fingerprint_base64
+        }
+    
+    # 也存储合并所有能量级别的数据（向后兼容）
     all_peaks = []
     for energy_level, peaks in ms2_data.items():
         all_peaks.extend(peaks)
     
-    # 计算浮点数指纹向量（用于快速预筛选）
-    fingerprint_float = calculate_ms2_fingerprint(ms2_data)
-    
-    # 转换为二进制指纹
-    fingerprint_binary = float_fingerprint_to_binary(fingerprint_float, threshold=0.01)
-    
-    # 转换为base64编码
-    fingerprint_base64 = binary_fingerprint_to_base64(fingerprint_binary)
-    
-    return {
-        'peaks': all_peaks,
-        'fingerprint_base64': fingerprint_base64  # 只存储base64编码的二进制指纹
-    }
+    if all_peaks:
+        # 计算合并的指纹
+        fingerprint_float = calculate_ms2_fingerprint(ms2_data)
+        fingerprint_binary = float_fingerprint_to_binary(fingerprint_float, threshold=0.01)
+        fingerprint_base64 = binary_fingerprint_to_base64(fingerprint_binary)
+        
+        return {
+            'energy_levels': energy_level_data,
+            'all_peaks': all_peaks,
+            'all_fingerprint_base64': fingerprint_base64
+        }
+    else:
+        return {
+            'energy_levels': energy_level_data,
+            'all_peaks': [],
+            'all_fingerprint_base64': ''
+        }
 
 def load_config(config_path: str = 'config.yaml') -> Dict[str, Any]:
     """
@@ -416,8 +442,15 @@ energy1
     fingerprint_data1 = calculate_ms2_fingerprint_modified(ms2_data1)
     fingerprint_data2 = calculate_ms2_fingerprint_modified(ms2_data2)
     
-    print(f"指纹1长度: {len(fingerprint_data1['fingerprint'])}, 峰数量: {len(fingerprint_data1['peaks'])}")
-    print(f"指纹2长度: {len(fingerprint_data2['fingerprint'])}, 峰数量: {len(fingerprint_data2['peaks'])}")
+    print(f"指纹1能量级别数量: {len(fingerprint_data1['energy_levels'])}, 总峰数量: {len(fingerprint_data1['all_peaks'])}")
+    print(f"指纹2能量级别数量: {len(fingerprint_data2['energy_levels'])}, 总峰数量: {len(fingerprint_data2['all_peaks'])}")
+    
+    # 测试每个能量级别的数据
+    for energy_level in fingerprint_data1['energy_levels']:
+        print(f"  能量级别 {energy_level}: {len(fingerprint_data1['energy_levels'][energy_level]['peaks'])} 个峰")
+    
+    for energy_level in fingerprint_data2['energy_levels']:
+        print(f"  能量级别 {energy_level}: {len(fingerprint_data2['energy_levels'][energy_level]['peaks'])} 个峰")
 
 if __name__ == "__main__":
     import argparse

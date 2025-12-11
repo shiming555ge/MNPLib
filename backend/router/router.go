@@ -63,6 +63,7 @@ func Init(r *gin.Engine) {
 			rdkit.GET("/nmr-search", controllers.NMRSearch)
 			rdkit.POST("/ms2-search", controllers.MS2Search)
 			rdkit.POST("/ms2-search-by-fingerprint", controllers.MS2SearchByFingerprint)
+			rdkit.POST("/ms2-search-by-energy-level", controllers.MS2SearchByEnergyLevel)
 		}
 	}
 

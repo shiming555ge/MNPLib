@@ -684,3 +684,60 @@ func MS2SearchByFingerprint(fingerprintJson string, threshold string, tolerance 
 
 	return res, nil
 }
+
+// MS2SearchByEnergyLevel MS2相似度搜索（按能量级别分别比对）
+func MS2SearchByEnergyLevel(queryMS2 string, threshold string, tolerance string, prefilterThreshold string, energyLevel string) (string, error) {
+	// 检查Python进程是否已初始化
+	if p == nil {
+		errMsg := "RDkit进程未初始化"
+		utils.Log(errMsg)
+		return "", fmt.Errorf(errMsg)
+	}
+
+	// 获取数据库中的所有MS2数据
+	var compounds []struct {
+		ID              string `gorm:"column:ID" json:"id"`
+		MS2_fingerprint string `gorm:"column:MS2_fingerprint" json:"MS2_fingerprint"`
+	}
+
+	// 使用正确的表名和字段名查询
+	result := database.GetDB().Table("data").Select("ID, MS2_fingerprint").Find(&compounds)
+	if result.Error != nil {
+		utils.LogError(result.Error)
+		return "", fmt.Errorf("数据库查询失败: %v", result.Error)
+	}
+
+	// 准备发送给Python的数据
+	library := make([]map[string]interface{}, len(compounds))
+	for i, compound := range compounds {
+		library[i] = map[string]interface{}{
+			"id":              compound.ID,
+			"MS2_fingerprint": compound.MS2_fingerprint,
+		}
+	}
+
+	// 发送MS2按能量级别搜索请求
+	requestData := map[string]interface{}{
+		"action":              "ms2_search_by_energy_level",
+		"query_ms2":           queryMS2,
+		"threshold":           threshold,
+		"tolerance":           tolerance,
+		"prefilter_threshold": prefilterThreshold,
+		"energy_level":        energyLevel,
+		"library":             library,
+	}
+
+	requestJSON, err := json.Marshal(requestData)
+	if err != nil {
+		utils.LogError(err)
+		return "", fmt.Errorf("请求数据序列化失败: %v", err)
+	}
+
+	res, err := p.SendAndWait(string(requestJSON))
+	if err != nil {
+		utils.LogError(err)
+		return "", fmt.Errorf("MS2按能量级别搜索失败: %v", err)
+	}
+
+	return res, nil
+}

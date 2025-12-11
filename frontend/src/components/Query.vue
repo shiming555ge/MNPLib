@@ -21,11 +21,13 @@ const nmrText = ref('')
 const nmrFile = ref(null)
 const threshold = ref(0.5)
 const tolerance = ref(0.5)
+const defaultNMR = '173.7, 170.6, 170.3, 169.5, 169.5, 157.8, 150.5, 134.5, 129.2, 128.5, 128.5, 126.7, 123.2, 121.0, 119.9, 113.6, 113.6, 57.5, 56.4, 55.8, 54.9, 42.9, 40.0, 38.0, 34.8, 28.4, 27.4, 22.5, 22.5, 19.1, 16.8, 14.1'
 
 // MS2搜索相关
 const ms2Text = ref('')
 const ms2File = ref(null)
 const prefilterThreshold = ref(0.25) // 默认值为0.5的一半
+const defaultMS2 = 'energy0\n263.08150 3.50\n265.09715 100.00\nenergy1\n169.07602 14.84\n247.08659 11.96\n265.09715 100.00'
 
 // 分页相关
 const currentPage = ref(1)
@@ -168,12 +170,14 @@ const handleSearch = async () => {
     if (searchMode.value === 'c-nmr') {
       // 核磁谱搜索
       if (!nmrText.value.trim()) {
-        errorMessage.value = t('query.enter_nmr_data_or_upload')
-        loading.value = false
-        return
+        nmrText.value = defaultNMR
       }
+
+      nmrText.value = nmrText.value.replace("，", ",")
       
+      console.log(`/api/rdkit/nmr-search?query_nmr=${encodeURIComponent(nmrText.value)}&threshold=${threshold.value}&tolerance=${tolerance.value}`)
       const response = await fetch(`/api/rdkit/nmr-search?query_nmr=${encodeURIComponent(nmrText.value)}&threshold=${threshold.value}&tolerance=${tolerance.value}`)
+      
       
       if (!response.ok) {
         throw new Error(`API请求失败: ${response.status}`)
@@ -213,72 +217,217 @@ const handleSearch = async () => {
         searchResults.value = []
       }
     } else if (searchMode.value === 'ms2') {
-      // MS2相似度搜索 - 使用客户端指纹计算
+      // MS2相似度搜索 - 按能量级别分别搜索
       if (!ms2Text.value.trim()) {
-        ms2Text.value = "554.26092 2.31\n610.32353 100.00\n135.08044 3.61\n500.25036 2.39\n502.26601 3.34\n552.24527 10.50\n554.26092 6.32\n568.27657 2.83\n578.29731 2.53\n592.31296 6.40\n608.30788 4.76\n610.32353 100.00\n41.03858 21.35\n43.05423 9.57\n55.05423 8.30\n57.06988 5.97\n91.05423 5.92\n105.06988 5.43\n133.06479 7.85\n135.08044 52.17\n137.09609 21.14\n143.14304 5.47\n404.15646 9.21\n416.15646 7.93\n418.17211 15.61\n432.18776 18.35\n442.17211 5.60\n444.18776 6.71\n446.20341 22.55\n460.21906 7.04\n508.21906 15.78\n510.19832 7.16\n510.23471 6.90\n536.21397 16.68\n538.22962 12.24\n550.22962 11.28\n552.24527 11.95\n564.24527 5.73\n566.26092 13.06\n592.31296 12.75\n594.29223 14.59\n608.30788 100.00\n610.32353 7.21"
+        ms2Text.value = defaultMS2
       }
       
       try {
         // 动态导入MS2处理器（避免在不需要时加载）
         const ms2Processor = await import('../utils/ms2Processor.js')
         
-        // 在客户端计算指纹，限制最大峰数量为5000，保留强度最高的峰，避免处理大文件时性能问题
-        const fingerprintJson = ms2Processor.calculateMS2FingerprintJson(ms2Text.value, 5000, true)
+        // 解析MS2数据，获取能量级别信息
+        const ms2Data = ms2Processor.parseMS2Data(ms2Text.value, 5000, true)
+        console.log('解析的MS2数据能量级别:', Object.keys(ms2Data))
         
-        if (!fingerprintJson) {
-          throw new Error('无法计算MS2指纹：数据格式可能不正确')
+        // 确定要搜索的能量级别
+        let energyLevelsToSearch = []
+        const hasEnergyMarkers = Object.keys(ms2Data).some(key => key.startsWith('energy'))
+        
+        if (hasEnergyMarkers) {
+          // 有energy标识的块，使用所有检测到的能量级别
+          energyLevelsToSearch = Object.keys(ms2Data).filter(key => key.startsWith('energy'))
+          console.log('检测到能量级别块:', energyLevelsToSearch)
+        } else {
+          // 没有energy标识的块，从energy0到energy2各查找一次，再加上总体搜索
+          energyLevelsToSearch = ['energy0', 'energy1', 'energy2', 'all']
+          console.log('未检测到能量级别，使用默认能量级别和总体搜索:', energyLevelsToSearch)
         }
         
-        console.log('客户端计算的MS2指纹完成，发送到后端进行搜索...')
+        if (energyLevelsToSearch.length === 0) {
+          throw new Error('无法确定能量级别：请检查MS2数据格式')
+        }
         
-        // 使用新的指纹搜索API
-        const response = await fetch('/api/rdkit/ms2-search-by-fingerprint', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            fingerprint_json: fingerprintJson,
-            threshold: threshold.value,
-            tolerance: tolerance.value,
-            prefilter_threshold: prefilterThreshold.value
-          })
+        // 为每个能量级别准备搜索请求
+        const searchPromises = energyLevelsToSearch.map(async (energyLevel) => {
+          console.log(`发送 ${energyLevel} 能量级别搜索请求...`)
+          
+          if (energyLevel === 'all') {
+            // 总体搜索 - 使用原始的MS2搜索API
+            const response = await fetch('/api/rdkit/ms2-search', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                query_ms2: ms2Text.value,
+                threshold: threshold.value,
+                tolerance: tolerance.value,
+                prefilter_threshold: prefilterThreshold.value
+              })
+            })
+            
+            if (!response.ok) {
+              throw new Error(`总体API请求失败: ${response.status}`)
+            }
+            
+            const result = await response.json()
+            console.log('总体搜索API响应结果:', result)
+            
+            // 处理API响应格式
+            if (result.code === 200200 && result.data) {
+              try {
+                const parsedData = JSON.parse(result.data)
+                console.log('总体搜索解析出的MS2搜索结果:', parsedData)
+                
+                // 提取化合物ID和相似度分数
+                let compoundResults = []
+                if (Array.isArray(parsedData) && parsedData.length > 0) {
+                  compoundResults = parsedData.map(item => ({
+                    id: item[0],
+                    similarity: item[1]
+                  }))
+                }
+                
+                return {
+                  energyLevel: 'all',
+                  success: true,
+                  compoundResults
+                }
+              } catch (parseError) {
+                console.error('解析总体搜索数据失败:', parseError)
+                return {
+                  energyLevel: 'all',
+                  success: false,
+                  compoundResults: []
+                }
+              }
+            } else {
+              return {
+                energyLevel: 'all',
+                success: false,
+                compoundResults: []
+              }
+            }
+          } else {
+            // 能量级别搜索
+            const response = await fetch('/api/rdkit/ms2-search-by-energy-level', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                query_ms2: ms2Text.value,
+                threshold: threshold.value,
+                tolerance: tolerance.value,
+                prefilter_threshold: prefilterThreshold.value,
+                energy_level: energyLevel
+              })
+            })
+            
+            if (!response.ok) {
+              throw new Error(`${energyLevel} API请求失败: ${response.status}`)
+            }
+            
+            const result = await response.json()
+            console.log(`${energyLevel} 搜索API响应结果:`, result)
+            
+            // 处理API响应格式
+            if (result.code === 200200 && result.data) {
+              try {
+                const parsedData = JSON.parse(result.data)
+                console.log(`${energyLevel} 解析出的MS2搜索结果:`, parsedData)
+                
+                // 提取化合物ID和相似度分数
+                let compoundResults = []
+                if (Array.isArray(parsedData) && parsedData.length > 0) {
+                  compoundResults = parsedData.map(item => ({
+                    id: item[0],
+                    similarity: item[1]
+                  }))
+                }
+                
+                return {
+                  energyLevel,
+                  success: true,
+                  compoundResults
+                }
+              } catch (parseError) {
+                console.error(`解析 ${energyLevel} 数据失败:`, parseError)
+                return {
+                  energyLevel,
+                  success: false,
+                  compoundResults: []
+                }
+              }
+            } else {
+              return {
+                energyLevel,
+                success: false,
+                compoundResults: []
+              }
+            }
+          }
         })
         
-        if (!response.ok) {
-          throw new Error(`API请求失败: ${response.status}`)
-        }
-
-        const result = await response.json()
-        console.log('MS2指纹搜索API响应结果:', result)
+        // 等待所有能量级别的搜索结果
+        const allResults = await Promise.allSettled(searchPromises)
+        console.log('所有能量级别搜索结果:', allResults)
         
-        // 处理API响应格式
-        if (result.code === 200200 && result.data) {
-          try {
-            const parsedData = JSON.parse(result.data)
-            console.log('解析出的MS2搜索结果:', parsedData)
-            
-            let compoundIds = []
-            
-            // MS2搜索：数据格式为 [["CMP0005", 0.8], ["CMP0054", 0.7]]
-            if (Array.isArray(parsedData) && parsedData.length > 0) {
-              compoundIds = parsedData.map(item => item[0]) // 提取ID
-            }
-            
-            console.log('提取的化合物ID:', compoundIds)
-            
-            // 根据ID获取完整的化合物数据
-            if (compoundIds.length > 0) {
-              const compoundPromises = compoundIds.map(id => fetchCompoundById(id))
-              const compounds = await Promise.all(compoundPromises)
-              searchResults.value = compounds
-            } else {
-              searchResults.value = []
-            }
-          } catch (parseError) {
-            console.error('解析MS2数据失败:', parseError)
-            searchResults.value = []
+        // 收集所有成功的搜索结果
+        const successfulResults = []
+        for (const result of allResults) {
+          if (result.status === 'fulfilled' && result.value.success) {
+            successfulResults.push(result.value)
           }
+        }
+        
+        if (successfulResults.length === 0) {
+          throw new Error('所有能量级别搜索都失败了')
+        }
+        
+        // 根据是否有能量标记决定取交集还是并集
+        let finalCompoundIds = []
+        
+        if (hasEnergyMarkers) {
+          // 有能量标记：多个能量级别结果取交集
+          if (successfulResults.length === 1) {
+            // 只有一个能量级别，直接使用其结果
+            finalCompoundIds = successfulResults[0].compoundResults.map(item => item.id)
+          } else {
+            // 多个能量级别，取交集
+            // 首先将每个能量级别的结果转换为ID集合
+            const idSets = successfulResults.map(result => 
+              new Set(result.compoundResults.map(item => item.id))
+            )
+            
+            // 取所有集合的交集
+            if (idSets.length > 0) {
+              const firstSet = idSets[0]
+              const intersection = Array.from(firstSet).filter(id => 
+                idSets.every(set => set.has(id))
+              )
+              finalCompoundIds = intersection
+            }
+          }
+          console.log('有能量标记，最终化合物ID（交集）:', finalCompoundIds)
+        } else {
+          // 没有能量标记：所有搜索结果取并集
+          const allIds = new Set()
+          for (const result of successfulResults) {
+            for (const compound of result.compoundResults) {
+              allIds.add(compound.id)
+            }
+          }
+          finalCompoundIds = Array.from(allIds)
+          console.log('无能量标记，最终化合物ID（并集）:', finalCompoundIds)
+        }
+        
+        // 根据ID获取完整的化合物数据
+        if (finalCompoundIds.length > 0) {
+          const compoundPromises = finalCompoundIds.map(id => fetchCompoundById(id))
+          const compounds = await Promise.all(compoundPromises)
+          searchResults.value = compounds
         } else {
           searchResults.value = []
         }
@@ -668,7 +817,7 @@ onMounted(() => {
                 class="form-control" 
                 v-model="nmrText" 
                 rows="8" 
-                :placeholder="t('query.enter_nmr_data_or_upload')"
+                :placeholder="t('query.enter_ms2_data_or_upload')+defaultNMR"
               ></textarea>
               <div class="form-text">{{ t('query.supported_formats') }}</div>
             </div>
@@ -743,7 +892,7 @@ onMounted(() => {
                 class="form-control" 
                 v-model="ms2Text" 
                 rows="8" 
-                :placeholder="t('query.enter_ms2_data_or_upload')"
+                :placeholder="t('query.enter_ms2_data_or_upload')+defaultMS2"
               ></textarea>
               <div class="form-text">{{ t('query.ms2_supported_formats') }}</div>
             </div>

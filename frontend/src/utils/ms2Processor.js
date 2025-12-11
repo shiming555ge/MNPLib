@@ -31,7 +31,7 @@ export function parseMS2Data(ms2Text, maxPeaks = 2000, keepTopIntensity = true) 
     if (!hasEnergyMarkers) {
         // 简单两列格式，如A9_165640.txt
         // 创建一个默认的能量级别
-        currentEnergy = 'energy0';
+        currentEnergy = 'empty';
         const allPeaks = [];
         
         for (const line of lines) {

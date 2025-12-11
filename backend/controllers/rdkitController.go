@@ -229,3 +229,68 @@ func MS2SearchByFingerprint(c *gin.Context) {
 	}
 	utils.JsonSuccessResponse(c, result)
 }
+
+// MS2SearchByEnergyLevel MS2相似度搜索（按能量级别分别比对）
+func MS2SearchByEnergyLevel(c *gin.Context) {
+	// 定义请求结构体
+	type MS2EnergyLevelSearchRequest struct {
+		QueryMS2           string  `json:"query_ms2" binding:"required"`
+		Threshold          float64 `json:"threshold"`
+		Tolerance          float64 `json:"tolerance"`
+		PrefilterThreshold float64 `json:"prefilter_threshold"`
+		EnergyLevel        string  `json:"energy_level"`
+	}
+
+	// 绑定请求参数
+	var req MS2EnergyLevelSearchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.JsonErrorResponse(c, 200400, fmt.Sprintf("请求参数错误: %v", err))
+		return
+	}
+
+	// 设置默认值
+	if req.Threshold == 0 {
+		req.Threshold = 0.5
+	}
+	if req.Tolerance == 0 {
+		req.Tolerance = 0.5
+	}
+	if req.PrefilterThreshold == 0 {
+		req.PrefilterThreshold = 0.3
+	}
+	if req.EnergyLevel == "" {
+		req.EnergyLevel = "energy0" // 默认使用energy0
+	}
+
+	// 验证参数
+	if req.QueryMS2 == "" {
+		utils.JsonErrorResponse(c, 200400, "查询MS2数据不能为空")
+		return
+	}
+
+	// 验证能量级别参数
+	validEnergyLevels := []string{"energy0", "energy1", "energy2"}
+	valid := false
+	for _, level := range validEnergyLevels {
+		if req.EnergyLevel == level {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		utils.JsonErrorResponse(c, 200400, "能量级别参数无效，必须是energy0、energy1或energy2")
+		return
+	}
+
+	// 转换参数为字符串
+	thresholdStr := fmt.Sprintf("%.2f", req.Threshold)
+	toleranceStr := fmt.Sprintf("%.2f", req.Tolerance)
+	prefilterThresholdStr := fmt.Sprintf("%.2f", req.PrefilterThreshold)
+
+	result, err := services.MS2SearchByEnergyLevel(req.QueryMS2, thresholdStr, toleranceStr, prefilterThresholdStr, req.EnergyLevel)
+	if err != nil {
+		utils.JsonErrorResponse(c, 200500, fmt.Sprintf("MS2按能量级别搜索失败: %v", err))
+		return
+	}
+	utils.JsonSuccessResponse(c, result)
+}

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MS2 Energy Level Search Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin: 10px 0;
+            padding: 10px;
+            font-family: monospace;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .loading {
+            display: none;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MS2 Energy Level Search Test</h1>
+        
+        <div>
+            <h3>Test Data (with energy markers):</h3>
+            <textarea id="ms2DataWithEnergy">
+energy0
+271.06010 15.81 45 (2.9501)
+273.07575 50.41 49 53 64 62 61 60 55 58 57 56 92 (7.0903 1.1007 0.33349 0.31693 0.24094 0.11569 0.11206 0.052208 0.03833 0.0080716 1.1611e-05)
+energy1
+55.05423 5.42 32 147 (0.86092 0.42807)
+65.03858 6.17 44 (1.4683)
+            </textarea>
+        </div>
+        
+        <div>
+            <h3>Test Data (without energy markers):</h3>
+            <textarea id="ms2DataWithoutEnergy">
+554.26092 2.31
+610.32353 100.00
+135.08044 3.61
+500.25036 2.39
+502.26601 3.34
+552.24527 10.50
+554.26092 6.32
+568.27657 2.83
+578.29731 2.53
+592.31296 6.40
+608.30788 4.76
+610.32353 100.00
+            </textarea>
+        </div>
+        
+        <div>
+            <label>
+                <input type="radio" name="dataType" value="withEnergy" checked> With Energy Markers
+            </label>
+            <label>
+                <input type="radio" name="dataType" value="withoutEnergy"> Without Energy Markers
+            </label>
+        </div>
+        
+        <div>
+            <label>Threshold: <input type="number" id="threshold" value="0.5" step="0.1" min="0" max="1"></label>
+            <label>Tolerance: <input type="number" id="tolerance" value="0.5" step="0.1" min="0.1" max="2"></label>
+            <label>Prefilter Threshold: <input type="number" id="prefilter" value="0.3" step="0.1" min="0" max="1"></label>
+        </div>
+        
+        <button onclick="testSearch()">Test MS2 Energy Level Search</button>
+        
+        <div class="loading" id="loading">Searching... Please wait.</div>
+        
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        async function testSearch() {
+            const dataType = document.querySelector('input[name="dataType"]:checked').value;
+            const ms2Data = dataType === 'withEnergy' 
+                ? document.getElementById('ms2DataWithEnergy').value
+                : document.getElementById('ms2DataWithoutEnergy').value;
+            
+            const threshold = document.getElementById('threshold').value;
+            const tolerance = document.getElementById('tolerance').value;
+            const prefilter = document.getElementById('prefilter').value;
+            
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            loading.style.display = 'block';
+            result.textContent = '';
+            
+            try {
+                // First, parse the MS2 data to determine energy levels
+                const parseResponse = await fetch('/api/rdkit/ms2-search-by-energy-level', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query_ms2: ms2Data,
+                        threshold: parseFloat(threshold),
+                        tolerance: parseFloat(tolerance),
+                        prefilter_threshold: parseFloat(prefilter),
+                        energy_level: 'energy0' // Test with energy0 first
+                    })
+                });
+                
+                if (!parseResponse.ok) {
+                    throw new Error(`API request failed: ${parseResponse.status}`);
+                }
+                
+                const parseResult = await parseResponse.json();
+                
+                // Display the result
+                result.textContent = JSON.stringify(parseResult, null, 2);
+                
+                // Also test multiple energy levels if data has energy markers
+                if (dataType === 'withEnergy') {
+                    result.textContent += '\n\nTesting multiple energy levels...\n';
+                    
+                    // Test energy1 as well
+                    const energy1Response = await fetch('/api/rdkit/ms2-search-by-energy-level', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query_ms2: ms2Data,
+                            threshold: parseFloat(threshold),
+                            tolerance: parseFloat(tolerance),
+                            prefilter_threshold: parseFloat(prefilter),
+                            energy_level: 'energy1'
+                        })
+                    });
+                    
+                    if (energy1Response.ok) {
+                        const energy1Result = await energy1Response.json();
+                        result.textContent += '\nEnergy1 result:\n' + JSON.stringify(energy1Result, null, 2);
+                    }
+                }
+                
+            } catch (error) {
+                result.textContent = 'Error: ' + error.message;
+                console.error(error);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        
+        // Test the old API for comparison
+        async function testOldAPI() {
+            const ms2Data = document.getElementById('ms2DataWithoutEnergy').value;
+            const threshold = document.getElementById('threshold').value;
+            const tolerance = document.getElementById('tolerance').value;
+            const prefilter = document.getElementById('prefilter').value;
+            
+            try {
+                const response = await fetch('/api/rdkit/ms2-search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query_ms2: ms2Data,
+                        threshold: parseFloat(threshold),
+                        tolerance: parseFloat(tolerance),
+                        prefilter_threshold: parseFloat(prefilter)
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('Old API result:', result);
+                return result;
+            } catch (error) {
+                console.error('Old API test failed:', error);
+                throw error;
+            }
+        }
+    </script>
+</body>
+</html>
