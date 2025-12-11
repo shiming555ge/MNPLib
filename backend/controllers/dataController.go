@@ -150,7 +150,7 @@ func GetDataStatistics(c *gin.Context) {
 
 // FilterCompounds 筛选化合物
 // @Summary 筛选化合物
-// @Description 根据ItemType、分子量范围、Description和Source进行筛选，支持数组参数
+// @Description 根据ItemType、分子量范围、Description、Source和Group进行筛选，支持数组参数
 // @Tags data
 // @Accept json
 // @Produce json
@@ -161,6 +161,7 @@ func GetDataStatistics(c *gin.Context) {
 // @Param max_weight query number false "最大分子量"
 // @Param description query []string false "Description描述数组" collectionFormat(multi)
 // @Param source query []string false "Source来源数组" collectionFormat(multi)
+// @Param groups query []int false "Group课题组数组，1-5对应课题1-课题5" collectionFormat(multi)
 // @Success 200 {object} utils.JSONResponse{data=[]models.Data}
 // @Failure 500 {object} utils.JSONResponse
 // @Router /api/data/filter [get]
@@ -173,6 +174,7 @@ func FilterCompounds(c *gin.Context) {
 	maxWeightStr := c.Query("max_weight")
 	descriptions := c.QueryArray("description")
 	sources := c.QueryArray("source")
+	groups := c.QueryArray("groups")
 
 	// 转换参数为整数
 	limit, err := strconv.Atoi(limitStr)
@@ -212,7 +214,7 @@ func FilterCompounds(c *gin.Context) {
 	}
 
 	// 调用筛选服务，传入分页参数和数组参数
-	compounds, totalCount, err := services.FilterCompounds(itemTypes, minWeight, maxWeight, descriptions, sources, limit, offset)
+	compounds, totalCount, err := services.FilterCompounds(itemTypes, minWeight, maxWeight, descriptions, sources, groups, limit, offset)
 	if err != nil {
 		utils.JsonErrorResponse(c, 200500, "筛选化合物失败")
 		return
@@ -356,6 +358,25 @@ func GetSources(c *gin.Context) {
 	}
 
 	utils.JsonSuccessResponse(c, sources)
+}
+
+// GetGroups 获取所有Group分类
+// @Summary 获取Group分类
+// @Description 返回所有可用的Group分类
+// @Tags data
+// @Accept json
+// @Produce json
+// @Success 200 {object} utils.JSONResponse{data=[]string}
+// @Failure 500 {object} utils.JSONResponse
+// @Router /api/data/groups [get]
+func GetGroups(c *gin.Context) {
+	groups, err := services.GetGroups()
+	if err != nil {
+		utils.JsonErrorResponse(c, 200500, "获取Group分类失败")
+		return
+	}
+
+	utils.JsonSuccessResponse(c, groups)
 }
 
 // GetStructure 获取指定id的structure数据

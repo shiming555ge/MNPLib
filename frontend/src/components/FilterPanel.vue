@@ -24,11 +24,15 @@ const fixedItemTypes = ref([
   'OTHERS'
 ]);
 
+// 固定的课题组选项 (1-5)
+const fixedGroups = ref([1, 2, 3, 4, 5]);
+
 // --- 折叠/展开 逻辑 ---
 const ITEM_LIMIT = 10; // 默认显示的个数
 const showAllTypes = ref(false);
 const showAllDescs = ref(false);
 const showAllSources = ref(false);
+const showAllGroups = ref(false);
 
 // 计算显示的 ItemTypes
 const displayedItemTypes = computed(() => {
@@ -48,6 +52,12 @@ const displayedSources = computed(() => {
   return props.sources.slice(0, ITEM_LIMIT);
 });
 
+// 计算显示的 Groups
+const displayedGroups = computed(() => {
+  if (showAllGroups.value) return fixedGroups.value;
+  return fixedGroups.value.slice(0, ITEM_LIMIT);
+});
+
 // 切换选择
 const toggleFilterItem = (array, item) => {
   const index = array.indexOf(item);
@@ -59,6 +69,7 @@ const hasActiveFilters = computed(() => {
   return props.filters.item_type.length > 0 || 
          props.filters.description.length > 0 || 
          props.filters.source?.length > 0 ||
+         props.filters.groups?.length > 0 ||
          props.filters.min_weight || 
          props.filters.max_weight;
 });
@@ -102,19 +113,6 @@ const hasActiveFilters = computed(() => {
     <hr class="border-secondary opacity-10 my-4">
 
     <div class="mb-4">
-      <label class="form-label fw-bold small text-uppercase text-secondary mb-2">
-        <i class="bi bi-speedometer2 me-1"></i> {{ t('browse.molecular_weight_range') }}
-      </label>
-      <div class="input-group input-group-sm">
-        <input type="number" class="form-control" :placeholder="t('browse.min_weight')" v-model="filters.min_weight">
-        <span class="input-group-text bg-light text-muted border-start-0 border-end-0">-</span>
-        <input type="number" class="form-control" :placeholder="t('browse.max_weight')" v-model="filters.max_weight">
-      </div>
-    </div>
-
-    <hr class="border-secondary opacity-10 my-4">
-
-    <div class="mb-4">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <label class="form-label fw-bold small text-uppercase text-secondary mb-0">
           <i class="bi bi-tags me-1"></i> {{ t('browse.description_category') }}
@@ -143,6 +141,54 @@ const hasActiveFilters = computed(() => {
         </div>
          <span v-if="!showAllDescs && descriptions.length > ITEM_LIMIT" class="badge text-secondary bg-light border align-self-center">
             +{{ descriptions.length - ITEM_LIMIT }}
+        </span>
+      </div>
+    </div>
+
+    <hr class="border-secondary opacity-10 my-4">
+
+    <div class="mb-4">
+      <label class="form-label fw-bold small text-uppercase text-secondary mb-2">
+        <i class="bi bi-speedometer2 me-1"></i> {{ t('browse.molecular_weight_range') }}
+      </label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control" :placeholder="t('browse.min_weight')" v-model="filters.min_weight">
+        <span class="input-group-text bg-light text-muted border-start-0 border-end-0">-</span>
+        <input type="number" class="form-control" :placeholder="t('browse.max_weight')" v-model="filters.max_weight">
+      </div>
+    </div>
+
+    <hr class="border-secondary opacity-10 my-4">
+
+    <div class="mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <label class="form-label fw-bold small text-uppercase text-secondary mb-0">
+          <i class="bi bi-people me-1"></i> {{ t('browse.sub_project_category') }}
+        </label>
+        <button 
+          v-if="fixedGroups.length > ITEM_LIMIT"
+          class="btn btn-link btn-sm p-0 text-decoration-none"
+          style="font-size: 0.8rem;"
+          @click="showAllGroups = !showAllGroups"
+        >
+          {{ showAllGroups ? t('browse.collapse') || '收起' : t('browse.expand') || '展开' }}
+          <i class="bi" :class="showAllGroups ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+        </button>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2">
+        <div 
+          v-for="group in displayedGroups" 
+          :key="group"
+          class="filter-chip group-chip"
+          :class="{ 'active bg-info text-white border-info': filters.groups?.includes(group) }"
+          @click="toggleFilterItem(filters.groups || (filters.groups = []), group)"
+        >
+          {{t('browse.sub_project_category') + " "+ group }}
+          <i v-if="filters.groups?.includes(group)" class="bi bi-check-lg ms-1"></i>
+        </div>
+         <span v-if="!showAllGroups && fixedGroups.length > ITEM_LIMIT" class="badge text-secondary bg-light border align-self-center">
+            +{{ fixedGroups.length - ITEM_LIMIT }}
         </span>
       </div>
     </div>

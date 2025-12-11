@@ -46,6 +46,7 @@ func Init(r *gin.Engine) {
 			data.GET("/item-types", controllers.GetItemTypes)
 			data.GET("/descriptions", controllers.GetDescriptions)
 			data.GET("/sources", controllers.GetSources)
+			data.GET("/groups", controllers.GetGroups)
 			// 受保护的数据路由，需要JWT认证
 			data.GET("/:id/protected", middlewares.JWTAuth(), controllers.GetDataByIDFull)
 		}

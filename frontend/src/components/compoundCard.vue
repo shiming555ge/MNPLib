@@ -1,6 +1,7 @@
 <script setup>
 import { useI18n } from 'vue-i18n';
 import MoleculeCanvas from './MoleculeCanvas.vue';
+import { computed } from 'vue';
 
 const { t } = useI18n();
 
@@ -19,6 +20,29 @@ const props = defineProps({
 
 const emit = defineEmits(['show-detail']);
 const showDetail = () => emit('show-detail');
+
+// 计算显示的名称：当 item_name 过长（超过 20 个字符）或为未知名称时显示 ID
+const displayName = computed(() => {
+  const name = props.compound.item_name ? props.compound.item_name.replace(/"/g, "") : '未命名化合物';
+  const id = props.compound.ID || props.compound.id || '未知ID';
+  
+  // 如果名称长度超过 20 个字符，或者名称为"未命名化合物"（未知名称），则显示 ID
+  if (name.length > 20 || name === '未命名化合物') {
+    return id;
+  }
+  return name;
+});
+
+// 计算 tooltip 文本：显示完整名称和 ID
+const nameTooltip = computed(() => {
+  const name = props.compound.item_name ? props.compound.item_name.replace(/"/g, "") : '未命名化合物';
+  const id = props.compound.ID || props.compound.id || '未知ID';
+  
+  if (name.length > 20 || name === '未命名化合物') {
+    return `名称: ${name}\nID: ${id}`;
+  }
+  return name;
+});
 </script>
 
 <template>
@@ -29,8 +53,8 @@ const showDetail = () => emit('show-detail');
                 <MoleculeCanvas :smiles="compound.smiles"></MoleculeCanvas>
             </div>
             <div class="card-body d-flex flex-column p-3">
-                <h6 class="card-title fw-bold text-truncate mb-1" :title="compound.item_name || '未命名化合物'">
-                    {{ compound.item_name ? compound.item_name.replace(/"/g, "") : '未命名化合物' }}
+                <h6 class="card-title fw-bold text-truncate mb-1" :title="nameTooltip">
+                    {{ displayName }}
                 </h6>
                 <p class="card-subtitle text-muted small mb-2 text-truncate">
                     <i class="bi bi-tag me-1"></i>{{ compound.cas_number || '无CAS号' }}

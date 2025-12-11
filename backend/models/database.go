@@ -45,6 +45,7 @@ type Data struct {
 	NMR_13C_data *string    `gorm:"column:NMR_13C_data;type:TEXT" json:"nmr_13c_data,omitempty"`
 	Weight       *float32   `gorm:"column:Weight;type:FLOAT" json:"weight,omitempty"`
 	FP           *string    `gorm:"column:FP;type:VARCHAR(255)" json:"fp,omitempty"`
+	Group        *string    `gorm:"column:Group;type:TINYTEXT" json:"group,omitempty"`
 	CreatedAt    *time.Time `gorm:"column:Created_At" json:"created_at,omitempty"`
 	UpdatedAt    *time.Time `gorm:"column:Updated_At" json:"updated_at,omitempty"`
 }
@@ -64,6 +65,7 @@ type PublicData struct {
 	MS1_Na      *float64   `gorm:"column:MS1_Na;type:DOUBLE" json:"ms1_na,omitempty"`
 	Weight      *float32   `gorm:"column:Weight;type:FLOAT" json:"weight,omitempty"`
 	FP          *string    `gorm:"column:FP;type:VARCHAR(255)" json:"fp,omitempty"`
+	Group       *string    `gorm:"column:Group;type:TINYTEXT" json:"group,omitempty"`
 	CreatedAt   *time.Time `gorm:"column:Created_At" json:"created_at,omitempty"`
 	UpdatedAt   *time.Time `gorm:"column:Updated_At" json:"updated_at,omitempty"`
 }

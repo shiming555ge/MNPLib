@@ -30,7 +30,28 @@ const copyToClipboard = async (text) => {
   if (!text || text === 'N/A') return
   
   try {
-    await navigator.clipboard.writeText(text)
+    // 检查 navigator.clipboard 是否存在
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      // 降级方案：使用 document.execCommand
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-999999px'
+      textArea.style.top = '-999999px'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      
+      const successful = document.execCommand('copy')
+      document.body.removeChild(textArea)
+      
+      if (!successful) {
+        throw new Error('无法复制到剪贴板')
+      }
+    }
+    
     // 可以添加一个简单的提示，这里使用Bootstrap的toast或alert
     showToast(t("superadmin.copied"))
   } catch (err) {
@@ -40,7 +61,7 @@ const copyToClipboard = async (text) => {
 }
 
 const clickToDownload = async (type, filename = null) => {  
-  try {
+  try { 
     // 准备请求头，如果需要认证的话
     const headers = {
       'Content-Type': 'application/json',
@@ -354,6 +375,10 @@ onUnmounted(() => {
                 <p>
                   <strong>{{ t('details.type') }}:</strong> 
                   {{ detailedData.item_type || 'N/A' }}
+                </p>
+                <p>
+                  <strong>{{ t('browse.sub_project_category') }}:</strong> 
+                  {{ detailedData.group ? t('browse.sub_project_category') + ' ' + detailedData.group.at(2) : 'N/A' }}
                 </p>
                 <p>
                   <strong>{{ t('details.weight') }}:</strong> 

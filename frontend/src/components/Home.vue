@@ -84,7 +84,7 @@ const fetchStatistics = async () => {
     if (response.ok) {
       const data = await response.json();
       statisticsData.value = data.data;
-      statisticsData.value.total_species = "500+"
+      statisticsData.value.total_species = "100+"
     } else {
       console.error('Failed to fetch statistics data');
       // Set default values if API fails
@@ -107,6 +107,8 @@ const fetchStatistics = async () => {
       nmr_data: "2100+"
     };
   } finally {
+    statisticsData.value.bioactivity_data = 908
+    statisticsData.value.nmr_data = 2451
     loading.value = false;
   }
 };

@@ -338,8 +338,8 @@ type indexData struct {
 	CASNumber *string `gorm:"column:CAS_number;type:VARCHAR(100)" json:"cas_number,omitempty"`
 }
 
-// FilterCompounds 筛选化合物 - 根据ItemType、分子量范围、Description和Source进行筛选，支持数组参数
-func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descriptions []string, sources []string, limit, offset int) ([]indexData, int64, error) {
+// FilterCompounds 筛选化合物 - 根据ItemType、分子量范围、Description、Source和Group进行筛选，支持数组参数
+func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descriptions []string, sources []string, groups []string, limit, offset int) ([]indexData, int64, error) {
 	// 构建查询条件
 	query := database.GetDB().Table("data")
 
@@ -407,6 +407,21 @@ func FilterCompounds(itemTypes []string, minWeight, maxWeight float64, descripti
 		}
 		// 使用OR连接多个LIKE条件
 		query = query.Where(strings.Join(likeConditions, " OR "), likeArgs...)
+	}
+
+	// Group筛选 - 支持数组，前端传递[int]数组，需要转换为'课题1'-'课题5'
+	if len(groups) > 0 {
+		// 将数字转换为对应的课题字符串
+		groupStrings := make([]string, 0, len(groups))
+		for _, groupNum := range groups {
+			if len(groupNum) == 1 && groupNum >= "1" && groupNum <= "5" {
+				groupStrings = append(groupStrings, "课题"+groupNum)
+			}
+		}
+
+		if len(groupStrings) > 0 {
+			query = query.Where("`Group` IN (?)", groupStrings)
+		}
 	}
 
 	// 分子量筛选 - 使用Weight字段
@@ -485,6 +500,22 @@ func GetSources() ([]string, error) {
 	}
 
 	return sources, nil
+}
+
+// GetGroups 获取所有Group分类
+func GetGroups() ([]string, error) {
+	var groups []string
+	result := database.GetDB().Table("data").
+		Where("`Group` IS NOT NULL AND `Group` != ''").
+		Distinct("`Group`").
+		Pluck("`Group`", &groups)
+
+	if result.Error != nil {
+		utils.LogError(result.Error)
+		return nil, fmt.Errorf("获取Group分类失败: %v", result.Error)
+	}
+
+	return groups, nil
 }
 
 // NMRSearch 核磁谱搜索

@@ -22,6 +22,7 @@ const filters = ref({
   item_type: [],     // 数组
   description: [],   // 数组
   source: [],        // 数组，新增source筛选
+  groups: [],        // 数组，新增课题组筛选
   min_weight: '',
   max_weight: ''
 });
@@ -76,6 +77,11 @@ const fetchCompounds = async (page = 1) => {
       filters.value.source.forEach(val => params.append('source', val));
     }
     
+    // groups筛选参数 - 使用JSON数组格式
+    if (filters.value.groups && filters.value.groups.length) {
+      filters.value.groups.forEach(val => params.append('groups', val))
+    }
+    
     // 普通参数
     if (filters.value.min_weight) params.append('min_weight', filters.value.min_weight);
     if (filters.value.max_weight) params.append('max_weight', filters.value.max_weight);
@@ -120,6 +126,7 @@ const resetFilters = () => {
     item_type: [],
     description: [],
     source: [],
+    groups: [],
     min_weight: '',
     max_weight: ''
   };
@@ -129,7 +136,7 @@ const resetFilters = () => {
 
 // 统计当前筛选数量 (用于移动端按钮上的红点)
 const activeFilterCount = computed(() => {
-  let count = filters.value.item_type.length + filters.value.description.length + (filters.value.source?.length || 0);
+  let count = filters.value.item_type.length + filters.value.description.length + (filters.value.source?.length || 0) + (filters.value.groups?.length || 0);
   if (filters.value.min_weight || filters.value.max_weight) count++;
   return count;
 });
